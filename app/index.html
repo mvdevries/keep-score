@@ -132,8 +132,8 @@
   .btn-primary{display:block; width:100%; background:var(--green); color:#fff; font-weight:700; font-size:19px; padding:19px; border-radius:18px; box-shadow:0 6px 18px rgba(62,142,90,.28);}
   .btn-primary{display:flex; align-items:center; justify-content:center; gap:9px;}
   .btn-sec{display:flex; align-items:center; justify-content:center; gap:8px;}
-  .subnav button{display:flex; align-items:center; justify-content:center; gap:7px;}
   .pill.green, .pill.solid{display:inline-flex; align-items:center; gap:7px;}
+  .tools-title{display:flex; align-items:center; gap:8px; font-size:22px; font-weight:800; letter-spacing:-.4px; color:var(--ink);}
   .btn-primary:active{transform:scale(.98);}
   .btn-primary[disabled]{background:var(--placeholder-ink); box-shadow:none; transform:none;}
   .btn-flat{display:block; width:100%; background:var(--card); font-weight:700; font-size:17px; padding:17px; border-radius:18px; box-shadow:var(--shadow); margin-top:10px;}
@@ -225,9 +225,6 @@
 
 
   /* ---------- tools ---------- */
-  .subnav{display:flex; gap:4px; background:var(--surface2); border-radius:16px; padding:5px; margin-bottom:16px;}
-  .subnav button{flex:1; padding:12px 4px; border-radius:12px; font-size:15px; font-weight:700; color:var(--ink-soft);}
-  .subnav button.is-on{background:var(--surface3); color:var(--ink); box-shadow:var(--shadow);}
   .tool-card{background:var(--card); border-radius:var(--radius); box-shadow:var(--shadow); padding:24px 18px; text-align:center;}
   .tool-hint{color:var(--ink-soft); font-size:15px; font-weight:600; margin:10px 4px 0;}
 
@@ -496,8 +493,8 @@ function touch(g){ g.updated = Date.now(); }
 /* ============================ render ============================ */
 const TABS = [
   { id:"games",     label:"Spellen",   icon:"trophy" },
-  { id:"templates", label:"Templates", icon:"layoutTemplate" },
   { id:"players",   label:"Spelers",   icon:"users" },
+  { id:"templates", label:"Templates", icon:"layoutTemplate" },
   { id:"tools",     label:"Tools",     icon:"wrench" }
 ];
 function renderTabs(){
@@ -521,8 +518,8 @@ function renderGameList(){
   const games = state.games.slice().sort((a,b) => (b.updated||0) - (a.updated||0));
   el.innerHTML =
     '<div class="topbar"><h1>Spellen</h1>' +
-      '<button class="icon-btn" data-act="show-history" aria-label="Historie">' + ico("history", 21) + '</button>' +
-      '<button class="pill solid" data-act="new-game">+ Nieuw</button></div>' +
+      '<button class="pill solid" data-act="new-game">+ Nieuw</button>' +
+      '<button class="icon-btn" data-act="show-history" aria-label="Historie">' + ico("history", 21) + '</button></div>' +
     (games.length
       ? games.map(g => {
           const st = standings(g);
@@ -630,9 +627,8 @@ function renderPlayers(){
 function renderHistory(){
   const el = document.getElementById("view-games");
   el.innerHTML =
-    '<div class="topbar">' +
-      '<button class="icon-btn" data-act="hide-history" aria-label="Terug naar spellen">' + ico("chevronLeft", 22) + '</button>' +
-      '<h1>Historie</h1></div>' +
+    '<div class="topbar"><h1>Historie</h1>' +
+      '<button class="icon-btn" data-act="hide-history" aria-label="Terug naar spellen">' + ico("chevronLeft", 22) + '</button></div>' +
     (state.history.length
       ? state.history.map((h,i) =>
           '<div class="card" style="display:block">' +
@@ -968,15 +964,16 @@ function renderTools(){
   const el = document.getElementById("view-tools");
   const sub = state.tools.sub;
   el.innerHTML =
-    '<div class="topbar"><h1>Tools</h1></div>' +
-    '<div class="subnav">' +
-      Object.keys(TOOLS).map(k => '<button data-act="tool-sub" data-sub="' + k + '" class="' + (sub === k ? "is-on" : "") + '">' + ico(TOOLICON[k], 18) + '<span>' + TOOLS[k] + '</span></button>').join("") +
-    '</div>' +
+    '<div class="topbar"><button class="tools-title" data-act="tool-menu">' + ico(TOOLICON[sub], 20) + '<span>' + TOOLS[sub] + '</span>' + ico("chevronDown", 18) + '</button></div>' +
     '<div class="tool-card' + (sub === "pick" ? " tool-card-fill" : "") + '" id="tool-stage">' + (sub === "timer" ? timerHTML() : sub === "dice" ? diceHTML() : pick2HTML()) + '</div>' +
     (sub === "pick" ? "" : '<p class="tool-hint">' + (sub === "timer"
       ? "Tik op de tijd om een eigen duur in te stellen. Hij loopt door als je naar een ander tabblad gaat."
       : "Kies hoeveel stenen je gooit. De worp klinkt hetzelfde als de echte, maar rolt nooit van de tafel.") + '</p>');
   if(sub === "pick") pick2Setup();
+}
+function toolMenu(){
+  actionSheet('<p class="section-label" style="margin-top:0">Tools</p>' +
+    Object.keys(TOOLS).map(k => '<button class="action" style="display:flex; align-items:center; justify-content:center; gap:8px" data-act="tool-sub" data-sub="' + k + '">' + ico(TOOLICON[k], 19) + '<span>' + TOOLS[k] + (state.tools.sub === k ? " ✓" : "") + '</span></button>').join(""));
 }
 
 /* ---- timer ---- */
@@ -1285,9 +1282,10 @@ document.addEventListener("click", ev => {
     }
 
     /* tools */
+    case "tool-menu": toolMenu(); break;
     case "tool-sub":
       if(state.tools.sub === "pick" && btn.dataset.sub !== "pick") pick2Reset();
-      state.tools.sub = btn.dataset.sub; render(); break;
+      state.tools.sub = btn.dataset.sub; closeAllSheets(); render(); break;
     case "t-preset": timerSet(Number(btn.dataset.secs)); break;
     case "t-start": timerStart(); break;
     case "t-reset":

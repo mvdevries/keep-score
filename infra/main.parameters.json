@@ -1,0 +1,33 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentParameters.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "resourceGroupName": {
+      "value": "rg-keepscore"
+    },
+    "appName": {
+      "value": "keepscore"
+    },
+    "location": {
+      "value": "westeurope"
+    },
+    "sku": {
+      "value": "Free"
+    },
+    "customDomainName": {
+      "value": "keepscore.xprtz.dev"
+    },
+    "dnsSubscriptionId": {
+      "value": "92f4e2a9-8f0a-4ecc-90fc-6c77c24a1b31"
+    },
+    "dnsResourceGroupName": {
+      "value": "rg-xprtzbv-infrastructure"
+    },
+    "dnsZoneName": {
+      "value": "xprtz.dev"
+    },
+    "dnsRecordName": {
+      "value": "keepscore"
+    }
+  }
+}

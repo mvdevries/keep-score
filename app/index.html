@@ -1,0 +1,1268 @@
+<!doctype html>
+<html lang="nl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1">
+<meta name="theme-color" content="#F2F5F3">
+<title>Keep Score</title>
+<style>
+  :root{
+    --bg:#F2F5F3;
+    --card:#FFFFFF;
+    --ink:#12212B;
+    --ink-soft:#67757F;
+    --line:#E4E9E6;
+    --green:#3E8E5A;
+    --green-dark:#22503A;
+    --green-tint:#E9F2EC;
+    --gold:#B8860B;
+    --gold-tint:#FBF3DC;
+    --red:#C8442F;
+    --radius:22px;
+    --shadow:0 1px 2px rgba(18,33,43,.05), 0 8px 20px rgba(18,33,43,.05);
+    --font:-apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Inter, system-ui, sans-serif;
+  }
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
+  html,body{height:100%;}
+  body{margin:0; background:var(--bg); color:var(--ink); font-family:var(--font); font-size:17px; line-height:1.3; overscroll-behavior:none;}
+  button{font-family:inherit; font-size:inherit; color:inherit; border:0; background:none; cursor:pointer;}
+  input{font-family:inherit; font-size:17px; color:inherit;}
+  :focus-visible{outline:3px solid #6FBF8E; outline-offset:2px; border-radius:12px;}
+
+  #app{max-width:520px; margin:0 auto; min-height:100%;}
+  .view{display:none; padding:8px 16px 130px;}
+  .view.is-active{display:block;}
+
+  .topbar{display:flex; align-items:center; gap:10px; padding:10px 0 14px; min-height:64px;}
+  .topbar h1{font-size:22px; font-weight:800; letter-spacing:-.4px; margin:0; flex:1;}
+  .topbar h1.center{text-align:center; font-size:20px;}
+  .title-btn{display:flex; align-items:center; gap:6px; justify-content:center; flex:1; font-size:20px; font-weight:800; letter-spacing:-.3px; min-width:0;}
+  .title-btn span{overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+  .pill{background:var(--card); border-radius:999px; padding:11px 18px; font-weight:600; font-size:16px; box-shadow:var(--shadow); flex:none;}
+  .pill.ghost{background:#E7ECE9; box-shadow:none;}
+  .pill.green{color:var(--green);}
+  .pill.solid{background:var(--green); color:#fff;}
+  .pill:active{transform:scale(.96);}
+  .pill[disabled]{background:#D6DED9; color:#8B9A92; box-shadow:none; transform:none;}
+  .icon-btn{width:50px; height:50px; border-radius:999px; background:var(--card); box-shadow:var(--shadow); display:grid; place-items:center; flex:none;}
+  .icon-btn:active{transform:scale(.94);}
+
+  .row2{display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:18px;}
+  .row2 .pill{display:flex; align-items:center; justify-content:center; gap:8px;}
+
+  .card{width:100%; background:var(--card); border-radius:var(--radius); box-shadow:var(--shadow); padding:18px; display:flex; align-items:center; gap:14px; text-align:left; margin-bottom:12px;}
+  .card:active{transform:scale(.985);}
+  .card.won{background:linear-gradient(180deg,#FFFDF6,#fff);}
+  .avatar{width:52px; height:52px; border-radius:999px; flex:none; display:grid; place-items:center; color:#fff; font-weight:700; font-size:19px;}
+  .avatar.sm{width:40px; height:40px; font-size:16px;}
+  .pc-info{flex:1; min-width:0;}
+  .pc-name{display:flex; align-items:center; gap:8px; font-size:21px; font-weight:700; letter-spacing:-.3px;}
+  .pc-name span{overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+  .pc-meta{color:var(--ink-soft); font-size:15px; font-weight:600; margin-top:3px;}
+  .pc-score{font-size:34px; font-weight:800; font-variant-numeric:tabular-nums; letter-spacing:-1px;}
+  .mini{display:block; color:var(--ink-soft); font-size:14px; font-weight:600; margin-top:6px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+  .chip{font-size:11px; font-weight:800; text-transform:uppercase; letter-spacing:.6px; background:var(--green-tint); color:var(--green-dark); padding:4px 8px; border-radius:999px; font-style:normal; flex:none;}
+  .chip.gold{background:var(--gold-tint); color:var(--gold);}
+  .bar{display:block; height:5px; border-radius:99px; background:#E7ECE9; margin-top:9px; overflow:hidden;}
+  .bar i{display:block; height:100%; background:var(--green); border-radius:99px; transition:width .35s ease;}
+  .bar i.full{background:var(--gold);}
+
+  .empty{text-align:center; padding:46px 20px;}
+  .empty .mark{font-size:40px; margin-bottom:10px;}
+  .empty h2{font-size:22px; margin:0 0 6px; letter-spacing:-.3px;}
+  .empty p{color:var(--ink-soft); margin:0 0 22px; font-size:16px;}
+  .btn-primary{display:block; width:100%; background:var(--green); color:#fff; font-weight:700; font-size:19px; padding:19px; border-radius:18px; box-shadow:0 6px 18px rgba(62,142,90,.28);}
+  .btn-primary{display:flex; align-items:center; justify-content:center; gap:9px;}
+  .btn-sec{display:flex; align-items:center; justify-content:center; gap:8px;}
+  .subnav button{display:flex; align-items:center; justify-content:center; gap:7px;}
+  .pill.green, .pill.solid{display:inline-flex; align-items:center; gap:7px;}
+  .btn-primary:active{transform:scale(.98);}
+  .btn-primary[disabled]{background:#C3CFC8; box-shadow:none; transform:none;}
+  .btn-flat{display:block; width:100%; background:var(--card); font-weight:700; font-size:17px; padding:17px; border-radius:18px; box-shadow:var(--shadow); margin-top:10px;}
+  .section-label{font-size:13px; font-weight:800; text-transform:uppercase; letter-spacing:.8px; color:var(--ink-soft); margin:24px 4px 10px;}
+
+  .banner{background:var(--gold-tint); border-radius:var(--radius); padding:18px; margin-bottom:14px; display:flex; align-items:center; gap:14px;}
+  .banner .t{flex:1;}
+  .banner strong{display:block; font-size:18px; letter-spacing:-.3px;}
+  .banner small{color:#8A6B12; font-weight:600;}
+
+  .tabbar{position:fixed; left:0; right:0; bottom:0; display:flex; justify-content:center; padding:0 10px calc(12px + env(safe-area-inset-bottom)); pointer-events:none; z-index:20;}
+  .tabbar-inner{pointer-events:auto; display:flex; width:100%; max-width:520px; background:rgba(255,255,255,.94); backdrop-filter:blur(14px); border-radius:26px; padding:7px 6px; box-shadow:0 6px 24px rgba(18,33,43,.14);}
+  .tab{flex:1 1 0; min-width:0; display:flex; flex-direction:column; align-items:center; gap:5px; padding:10px 2px; border-radius:19px; color:var(--ink-soft); font-size:11px; font-weight:700; letter-spacing:-.2px; white-space:nowrap;}
+  .tab.is-active{background:var(--green-tint); color:var(--green-dark);}
+  .tab .ico{width:23px; height:23px;}
+
+  .sheet{position:fixed; inset:0; z-index:40; display:none;}
+  .sheet.is-open{display:block;}
+  .scrim{position:absolute; inset:0; background:rgba(18,33,43,.35); opacity:0; transition:opacity .22s ease;}
+  .sheet.is-open .scrim{opacity:1;}
+  .panel{position:absolute; left:0; right:0; bottom:0; max-width:520px; margin:0 auto; background:var(--bg); border-radius:28px 28px 0 0; display:flex; flex-direction:column; max-height:96%; transform:translateY(100%); transition:transform .28s cubic-bezier(.32,.72,0,1); padding-bottom:env(safe-area-inset-bottom);}
+  .panel.full{top:12px;}
+  .sheet.is-open .panel{transform:translateY(0);}
+  .sheet-head{display:flex; align-items:center; gap:10px; padding:14px 16px; background:#fff; border-radius:28px 28px 0 0;}
+  .sheet-head h2{flex:1; text-align:center; font-size:18px; font-weight:800; margin:0;}
+  .sheet-body{padding:18px 16px 24px; overflow-y:auto; -webkit-overflow-scrolling:touch;}
+  @media (prefers-reduced-motion:reduce){
+    .panel,.scrim,.bar i{transition:none;}
+    .card:active,.pill:active,.btn-primary:active{transform:none;}
+  }
+
+  .select-row{display:flex; align-items:center; gap:14px; width:100%; background:var(--card); border-radius:18px; padding:14px 16px; margin-bottom:10px; box-shadow:var(--shadow); text-align:left;}
+  .select-row .nm{flex:1; font-size:18px; font-weight:600; min-width:0;}
+  .select-row .sub{display:block; color:var(--ink-soft); font-size:14px; font-weight:600;}
+  .tick{width:26px; height:26px; border-radius:999px; border:2px solid #C8D2CC; flex:none; display:grid; place-items:center;}
+  .select-row.is-on{box-shadow:0 0 0 2px var(--green), var(--shadow);}
+  .select-row.is-on .tick{background:var(--green); border-color:var(--green);}
+  .select-row.is-on .tick svg{display:block;}
+  .tick svg{display:none; width:15px; height:15px; color:#fff;}
+  .add-row{color:var(--green); font-weight:700; flex:none;}
+  .name-input{width:100%; background:var(--card); border-radius:18px; padding:16px; border:2px solid transparent; box-shadow:var(--shadow); font-weight:600;}
+  .name-input:focus{border-color:var(--green); outline:none;}
+  .field-label{font-size:14px; font-weight:700; color:var(--ink-soft); margin:16px 4px 8px;}
+  .seg{display:flex; background:#E7ECE9; border-radius:14px; padding:4px; gap:4px;}
+  .seg button{flex:1; padding:12px 6px; border-radius:11px; font-size:15px; font-weight:700; color:var(--ink-soft);}
+  .seg button.is-on{background:#fff; color:var(--ink); box-shadow:var(--shadow);}
+
+  .score-player{display:flex; align-items:center; gap:14px; padding:6px 4px 0;}
+  .score-player .nm{flex:1; font-size:24px; font-weight:800; letter-spacing:-.4px; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+  .level-stack{display:flex; flex-direction:column; align-items:center;}
+  .lvl-btn{width:54px; height:54px; border-radius:999px; background:var(--green-dark); color:#fff; display:grid; place-items:center;}
+  .lvl-btn.down{background:#93A39B;}
+  .lvl-btn[disabled]{opacity:.35;}
+  .lvl-btn:active{transform:scale(.93);}
+  .lvl-read{font-size:13px; font-weight:700; color:var(--ink-soft); text-align:center; line-height:1.15; padding:4px 0;}
+  .lvl-read b{display:block; font-size:26px; color:var(--ink); font-variant-numeric:tabular-nums;}
+
+  .display{text-align:center; padding:30px 0 22px;}
+  .display .val{font-size:62px; font-weight:800; font-variant-numeric:tabular-nums; letter-spacing:-2px; min-height:68px;}
+  .display .val.placeholder{color:#C3CFC8;}
+  .display .lbl{color:var(--ink-soft); font-size:16px; font-weight:600; margin-top:2px;}
+  .display .hint{color:var(--ink-soft); font-size:14px; margin-top:8px; font-variant-numeric:tabular-nums;}
+  .display .hint b{color:var(--gold);}
+  .keypad{display:grid; grid-template-columns:repeat(4,1fr); gap:9px; padding:14px 0 4px;}
+  .key{background:#E7EBE8; border-radius:14px; padding:17px 0; font-size:25px; font-weight:600; font-variant-numeric:tabular-nums; display:grid; place-items:center;}
+  .key.plain{background:transparent;}
+  .key.op{background:#DDE6E0; color:var(--green-dark); font-size:28px; font-weight:700;}
+  .key.eq{background:var(--green-dark); color:#fff; font-size:26px;}
+  .key.clr{background:transparent; color:var(--red); font-size:19px; font-weight:800;}
+  .key:active{filter:brightness(.94);}
+  .key.is-on{background:var(--green); color:#fff;}
+  .display .sum{font-size:19px; font-weight:700; color:var(--ink-soft); font-variant-numeric:tabular-nums; min-height:24px; letter-spacing:.5px;}
+
+  .entry{display:flex; align-items:center; gap:12px; background:var(--card); border-radius:16px; padding:14px 16px; margin-bottom:8px; box-shadow:var(--shadow);}
+  .entry .rnd{color:var(--ink-soft); font-size:14px; font-weight:700; width:74px; flex:none;}
+  .entry .pts{flex:1; font-size:20px; font-weight:800; font-variant-numeric:tabular-nums;}
+  .entry .pts.neg{color:var(--red);}
+  .del{color:var(--red); font-weight:700; font-size:15px; padding:6px 8px; flex:none;}
+  .total-row{display:flex; justify-content:space-between; padding:16px 4px 8px; font-weight:800; font-size:19px;}
+  .action{width:100%; background:var(--card); border-radius:16px; padding:17px; font-weight:600; margin-bottom:8px; box-shadow:var(--shadow); text-align:center;}
+  .action.danger{color:var(--red); font-weight:700;}
+  .stand{display:flex; align-items:center; gap:12px; padding:9px 4px;}
+  .stand .pos{width:26px; font-weight:800; color:var(--ink-soft); font-variant-numeric:tabular-nums;}
+  .stand .nm{flex:1; font-weight:600; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+  .stand .sc{font-weight:800; font-variant-numeric:tabular-nums;}
+  .trophy{text-align:center; font-size:52px; padding:8px 0 2px;}
+  .win-title{text-align:center; font-size:26px; font-weight:800; letter-spacing:-.5px; margin:0 0 4px;}
+  .win-sub{text-align:center; color:var(--ink-soft); font-weight:600; margin:0 0 14px;}
+
+
+  /* ---------- tools ---------- */
+  .subnav{display:flex; gap:4px; background:#E7ECE9; border-radius:16px; padding:5px; margin-bottom:16px;}
+  .subnav button{flex:1; padding:12px 4px; border-radius:12px; font-size:15px; font-weight:700; color:var(--ink-soft);}
+  .subnav button.is-on{background:#fff; color:var(--ink); box-shadow:var(--shadow);}
+  .tool-card{background:var(--card); border-radius:var(--radius); box-shadow:var(--shadow); padding:24px 18px; text-align:center;}
+  .tool-hint{color:var(--ink-soft); font-size:15px; font-weight:600; margin:10px 4px 0;}
+
+  .chiprow{display:flex; gap:8px; justify-content:center; flex-wrap:wrap; margin-bottom:8px;}
+  .chipbtn{border:2px solid var(--line); border-radius:999px; padding:11px 17px; font-weight:700; font-size:15px; background:#fff; color:var(--ink-soft);}
+  .chipbtn.is-on{background:var(--ink); border-color:var(--ink); color:#fff;}
+  .circlebtn{width:46px; height:46px; border-radius:999px; border:2px solid var(--line); font-weight:700; color:var(--ink-soft); background:#fff;}
+  .circlebtn.is-on{background:var(--ink); border-color:var(--ink); color:#fff;}
+
+  .ring{position:relative; width:220px; height:220px; margin:18px auto 6px;}
+  .ring svg{transform:rotate(-90deg);}
+  .ring .mid{position:absolute; inset:0; display:grid; place-content:center; gap:2px;}
+  .ring .t{font-size:52px; font-weight:800; font-variant-numeric:tabular-nums; letter-spacing:-2px; line-height:1;}
+  .ring .s{font-size:13px; font-weight:700; color:var(--ink-soft); text-transform:uppercase; letter-spacing:.8px;}
+  .ring.done .t{color:var(--green);}
+  @keyframes pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.06)}}
+  .ring.done{animation:pulse .7s ease-in-out 3;}
+  .btnrow{display:grid; grid-template-columns:2fr 1fr; gap:10px; margin-top:16px;}
+  .btn-sec{background:#E7ECE9; border-radius:18px; padding:19px; font-weight:700;}
+
+  .dicebox{display:flex; flex-wrap:wrap; gap:12px; justify-content:center; min-height:150px; align-items:center; padding:18px 0;}
+  .die{width:66px; height:66px; border-radius:16px; background:var(--ink); display:grid; grid-template:repeat(3,1fr)/repeat(3,1fr); gap:3px; padding:9px;}
+  .die i{border-radius:999px; background:#fff; opacity:0; transform:scale(.4); transition:opacity .12s, transform .12s;}
+  .die i.on{opacity:1; transform:scale(1);}
+  @keyframes tumble{0%{transform:rotate(0) translateY(0)}25%{transform:rotate(-16deg) translateY(-14px)}50%{transform:rotate(14deg) translateY(0)}75%{transform:rotate(-8deg) translateY(-7px)}100%{transform:rotate(0) translateY(0)}}
+  .die.rolling{animation:tumble .28s linear infinite;}
+  .bigtotal{font-size:40px; font-weight:800; font-variant-numeric:tabular-nums; letter-spacing:-1.5px;}
+
+  .pickstage{min-height:200px; display:grid; place-content:center; gap:12px; padding:14px 0;}
+  .pickstage .avatar{width:96px; height:96px; font-size:38px; margin:0 auto;}
+  .pickstage .who{font-size:26px; font-weight:800; letter-spacing:-.5px;}
+  .pickstage .ph{width:96px; height:96px; border-radius:999px; border:3px dashed #D3DBD6; display:grid; place-items:center; font-size:38px; color:#C3CFC8; margin:0 auto;}
+  @keyframes pop{0%{transform:scale(.6); opacity:0}60%{transform:scale(1.08)}100%{transform:scale(1); opacity:1}}
+  .pickstage.landed{animation:pop .4s ease-out;}
+  .pickchip{display:flex; align-items:center; gap:8px; border:2px solid var(--line); border-radius:999px; padding:6px 14px 6px 6px; font-weight:700; font-size:15px; background:#fff; color:var(--ink-soft);}
+  .pickchip .avatar{width:30px; height:30px; font-size:13px; filter:grayscale(1); opacity:.5;}
+  .pickchip.is-on{border-color:var(--green); color:var(--ink);}
+  .pickchip.is-on .avatar{filter:none; opacity:1;}
+  @media (prefers-reduced-motion:reduce){ .die.rolling,.ring.done,.pickstage.landed{animation:none;} }
+
+  #toast{position:fixed; left:50%; bottom:106px; transform:translate(-50%,20px); z-index:60; background:#12212B; color:#fff; font-size:15px; font-weight:600; padding:12px 18px; border-radius:14px; opacity:0; pointer-events:none; transition:all .22s ease; max-width:90%; text-align:center;}
+  #toast.is-on{opacity:1; transform:translate(-50%,0);}
+</style>
+</head>
+<body>
+
+<div id="app">
+  <main>
+    <section class="view is-active" id="view-games"></section>
+    <section class="view" id="view-tools"></section>
+    <section class="view" id="view-templates"></section>
+    <section class="view" id="view-history"></section>
+    <section class="view" id="view-players"></section>
+  </main>
+
+  <nav class="tabbar">
+    <div class="tabbar-inner" id="tabbar"></div>
+  </nav>
+</div>
+
+<div class="sheet" id="sheet-setup">
+  <div class="scrim" data-close></div>
+  <div class="panel full">
+    <div class="sheet-head">
+      <button class="pill green" data-close>Annuleer</button>
+      <h2>Nieuw spel</h2>
+      <button class="pill solid" id="setup-start" disabled>Start</button>
+    </div>
+    <div class="sheet-body" id="setup-body"></div>
+  </div>
+</div>
+
+<div class="sheet" id="sheet-template">
+  <div class="scrim" data-close></div>
+  <div class="panel full">
+    <div class="sheet-head">
+      <button class="pill green" data-close>Annuleer</button>
+      <h2 id="tpl-title">Template</h2>
+      <button class="pill solid" id="tpl-save">Bewaar</button>
+    </div>
+    <div class="sheet-body" id="tpl-body"></div>
+  </div>
+</div>
+
+<div class="sheet" id="sheet-score">
+  <div class="scrim" data-close></div>
+  <div class="panel full">
+    <div class="sheet-head">
+      <button class="pill green" data-close>Annuleer</button>
+      <h2 id="score-title">Punten toevoegen</h2>
+      <button class="pill" id="score-toggle">Rondes</button>
+    </div>
+    <div class="sheet-body" id="score-body"></div>
+  </div>
+</div>
+
+<div class="sheet" id="sheet-action">
+  <div class="scrim" data-close></div>
+  <div class="panel"><div class="sheet-body" id="action-body"></div></div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+"use strict";
+
+/* ============================ iconen ============================
+   Lucide v1.26.0, ISC-licentie (lucide.dev). De paden staan inline zodat
+   het bestand geen externe requests doet. */
+const ICONS = {
+  trophy: '<path d="M10 14.66v1.626a2 2 0 0 1-.976 1.696A5 5 0 0 0 7 21.978"/><path d="M14 14.66v1.626a2 2 0 0 0 .976 1.696A5 5 0 0 1 17 21.978"/><path d="M18 9h1.5a1 1 0 0 0 0-5H18"/><path d="M4 22h16"/><path d="M6 9a6 6 0 0 0 12 0V3a1 1 0 0 0-1-1H7a1 1 0 0 0-1 1z"/><path d="M6 9H4.5a1 1 0 0 1 0-5H6"/>',
+  layoutTemplate: '<rect width="18" height="7" x="3" y="3" rx="1"/><rect width="9" height="7" x="3" y="14" rx="1"/><rect width="5" height="7" x="16" y="14" rx="1"/>',
+  history: '<path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M12 7v5l4 2"/>',
+  users: '<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><path d="M16 3.128a4 4 0 0 1 0 7.744"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><circle cx="9" cy="7" r="4"/>',
+  wrench: '<path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.106-3.105c.32-.322.863-.22.983.218a6 6 0 0 1-8.259 7.057l-7.91 7.91a1 1 0 0 1-2.999-3l7.91-7.91a6 6 0 0 1 7.057-8.259c.438.12.54.662.219.984z"/>',
+  sort: '<path d="m21 16-4 4-4-4"/><path d="M17 20V4"/><path d="m3 8 4-4 4 4"/><path d="M7 4v16"/>',
+  userPlus: '<path d="M2 21a8 8 0 0 1 13.292-6"/><circle cx="10" cy="8" r="5"/><path d="M19 16v6"/><path d="M22 19h-6"/>',
+  chevronRight: '<path d="m9 18 6-6-6-6"/>',
+  chevronLeft: '<path d="m15 18-6-6 6-6"/>',
+  chevronUp: '<path d="m18 15-6-6-6 6"/>',
+  chevronDown: '<path d="m6 9 6 6 6-6"/>',
+  ellipsis: '<circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/>',
+  backspace: '<path d="M10 5a2 2 0 0 0-1.344.519l-6.328 5.74a1 1 0 0 0 0 1.481l6.328 5.741A2 2 0 0 0 10 19h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2z"/><path d="m12 9 6 6"/><path d="m18 9-6 6"/>',
+  check: '<path d="M20 6 9 17l-5-5"/>',
+  plus: '<path d="M5 12h14"/><path d="M12 5v14"/>',
+  dices: '<rect width="12" height="12" x="2" y="10" rx="2" ry="2"/><path d="m17.92 14 3.5-3.5a2.24 2.24 0 0 0 0-3l-5-4.92a2.24 2.24 0 0 0-3 0L10 6"/><path d="M6 18h.01"/><path d="M10 14h.01"/><path d="M15 6h.01"/><path d="M18 9h.01"/>',
+  timer: '<line x1="10" x2="14" y1="2" y2="2"/><line x1="12" x2="15" y1="14" y2="11"/><circle cx="12" cy="14" r="8"/>',
+  shuffle: '<path d="m18 14 4 4-4 4"/><path d="m18 2 4 4-4 4"/><path d="M2 18h1.973a4 4 0 0 0 3.3-1.7l5.454-8.6a4 4 0 0 1 3.3-1.7H22"/><path d="M2 6h1.972a4 4 0 0 1 3.6 2.2"/><path d="M22 18h-6.041a4 4 0 0 1-3.3-1.8l-.359-.45"/>',
+  play: '<path d="M5 5a2 2 0 0 1 3.008-1.728l11.997 6.998a2 2 0 0 1 .003 3.458l-12 7A2 2 0 0 1 5 19z"/>',
+  pause: '<rect x="14" y="3" width="5" height="18" rx="1"/><rect x="5" y="3" width="5" height="18" rx="1"/>',
+  reset: '<path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/>',
+  flag: '<path d="M4 22V4a1 1 0 0 1 .4-.8A6 6 0 0 1 8 2c3 0 5 2 7.333 2q2 0 3.067-.8A1 1 0 0 1 20 4v10a1 1 0 0 1-.4.8A6 6 0 0 1 16 16c-3 0-5-2-8-2a6 6 0 0 0-4 1.528"/>',
+  trash: '<path d="M10 11v6"/><path d="M14 11v6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M3 6h18"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>',
+};
+function ico(name, size, stroke){
+  const s = size || 22;
+  return '<svg class="ico" viewBox="0 0 24 24" width="' + s + '" height="' + s + '" fill="none" stroke="' + (stroke || "currentColor") +
+    '" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + ICONS[name] + '</svg>';
+}
+
+/* ============================ data ============================ */
+const PALETTE = ["#2E6B3E","#3F8F52","#57B26B","#7CC85C","#A3CE3E","#1E5033","#5FB89A","#86C258"];
+const SORTS = { score:"Hoogste score", low:"Laagste score", name:"Naam (A-Z)", added:"Volgorde toegevoegd" };
+
+let state = { players:[], games:[], templates:[], history:[], seeded:false, tab:"games", openGameId:null,
+               tools:{ sub:"timer", secs:30, dice:2, off:[] } };
+
+const uid = () => Math.random().toString(36).slice(2,9);
+const initial = n => (n.trim()[0] || "?").toUpperCase();
+const total = e => e.scores.reduce((a,s) => a + s.v, 0);
+const findPlayer = id => state.players.find(p => p.id === id) || { id, name:"?", color:"#93A39B" };
+const findGame = id => state.games.find(g => g.id === id);
+const esc = s => String(s).replace(/[&<>"']/g, c => ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;" }[c]));
+const today = () => new Date().toLocaleDateString("nl-NL",{ day:"numeric", month:"short", year:"numeric" });
+const avatar = (p,cls) => '<span class="avatar ' + (cls||"") + '" style="background:' + p.color + '">' + esc(initial(p.name)) + '</span>';
+const plural = (n,a,b) => n + " " + (n === 1 ? a : b);
+
+/* ============================ opslag ============================
+   Voorkeur is localStorage, dus alles blijft staan als je dit bestand zelf
+   host of lokaal opent. Binnen claude.ai bestaat localStorage niet in de
+   artifact-sandbox, daar valt hij terug op de artifact-opslag, en anders
+   op het geheugen van dit tabblad. */
+const KEY = "scorebord:v3", LEGACY = ["scorebord:v2","scorebord:v1"];
+const store = (() => {
+  try {
+    const probe = "__scorebord_probe__";
+    localStorage.setItem(probe,"1");
+    localStorage.removeItem(probe);
+    return {
+      label:"localStorage",
+      get: async k => localStorage.getItem(k),
+      set: async (k,v) => { try { localStorage.setItem(k,v); } catch(e){} }
+    };
+  } catch(e){}
+  if(window.storage){
+    return {
+      label:"de artifact-opslag van claude.ai",
+      get: async k => { try { const r = await window.storage.get(k); return r ? r.value : null; } catch(e){ return null; } },
+      set: async (k,v) => { try { await window.storage.set(k,v); } catch(e){} }
+    };
+  }
+  const mem = {};
+  return { label:"dit tabblad", get: async k => mem[k] || null, set: async (k,v) => { mem[k] = v; } };
+})();
+
+function snapshot(){
+  return { v:3, seeded:state.seeded, tools:state.tools, players:state.players, games:state.games, templates:state.templates, history:state.history };
+}
+let saveTimer = null;
+function save(){
+  clearTimeout(saveTimer);
+  saveTimer = setTimeout(() => store.set(KEY, JSON.stringify(snapshot())), 120);
+}
+function applyData(d){
+  state.players = d.players || [];
+  state.games = d.games || [];
+  state.templates = d.templates || [];
+  state.history = d.history || [];
+  state.seeded = !!d.seeded;
+  if(d.tools) state.tools = Object.assign(state.tools, d.tools);
+  if(d.game){ /* oude versie met precies één spel */
+    d.game.winScore = 0; d.game.winMode = "high"; d.game.levels = true;
+    d.game.won = null; d.game.updated = Date.now();
+    state.games.push(d.game);
+  }
+}
+async function load(){
+  const keys = [KEY].concat(LEGACY);
+  for(let i = 0; i < keys.length; i++){
+    try {
+      const raw = await store.get(keys[i]);
+      if(raw){ applyData(JSON.parse(raw)); return; }
+    } catch(e){}
+  }
+}
+
+/* ============================ helpers ============================ */
+function toast(msg){
+  const t = document.getElementById("toast");
+  t.textContent = msg; t.classList.add("is-on");
+  clearTimeout(t._h); t._h = setTimeout(() => t.classList.remove("is-on"), 2100);
+}
+function openSheet(id){ document.getElementById(id).classList.add("is-open"); }
+function closeSheet(id){ document.getElementById(id).classList.remove("is-open"); }
+function closeAllSheets(){ document.querySelectorAll(".sheet").forEach(s => s.classList.remove("is-open")); }
+
+function addPlayer(name){
+  const clean = (name || "").trim();
+  if(!clean) return null;
+  const dup = state.players.find(p => p.name.toLowerCase() === clean.toLowerCase());
+  if(dup) return dup;
+  const p = { id:uid(), name:clean, color:PALETTE[state.players.length % PALETTE.length] };
+  state.players.push(p);
+  return p;
+}
+function goalText(g){
+  if(!g.winScore) return "geen winscore";
+  return (g.winMode === "high" ? "eerst bij " : "grens ") + g.winScore + (g.winMode === "low" ? ", laagste wint" : " wint");
+}
+function sortedEntrants(g){
+  const list = g.entrants.slice();
+  if(g.sort === "score") list.sort((a,b) => total(b) - total(a));
+  else if(g.sort === "low") list.sort((a,b) => total(a) - total(b));
+  else if(g.sort === "name") list.sort((a,b) => findPlayer(a.pid).name.localeCompare(findPlayer(b.pid).name));
+  return list;
+}
+function standings(g){
+  return g.entrants.map(e => ({ pid:e.pid, name:findPlayer(e.pid).name, score:total(e), level:e.level }))
+    .sort((a,b) => g.winMode === "low" ? a.score - b.score : b.score - a.score);
+}
+/* winnaar zodra iemand de winscore raakt; bij winMode low wint dan de laagste stand */
+function evaluateWin(g){
+  if(!g.winScore) return null;
+  if(!g.entrants.some(e => total(e) >= g.winScore)) return null;
+  const st = standings(g);
+  const best = st[0].score;
+  return { pids:st.filter(s => s.score === best).map(s => s.pid), score:best, at:Date.now() };
+}
+function touch(g){ g.updated = Date.now(); }
+
+/* ============================ render ============================ */
+const TABS = [
+  { id:"games",     label:"Spellen",   icon:"trophy" },
+  { id:"templates", label:"Templates", icon:"layoutTemplate" },
+  { id:"history",   label:"Historie",  icon:"history" },
+  { id:"players",   label:"Spelers",   icon:"users" },
+  { id:"tools",     label:"Tools",     icon:"wrench" }
+];
+function renderTabs(){
+  document.getElementById("tabbar").innerHTML = TABS.map(t =>
+    '<button class="tab' + (state.tab === t.id ? " is-active" : "") + '" data-act="tab" data-tab="' + t.id + '">' +
+      ico(t.icon, 23) + t.label + '</button>').join("");
+}
+
+function render(){
+  renderTabs();
+  document.querySelectorAll(".view").forEach(v => v.classList.toggle("is-active", v.id === "view-" + state.tab));
+  if(state.tab === "games") state.openGameId ? renderGameDetail() : renderGameList();
+  if(state.tab === "tools") renderTools();
+  if(state.tab === "templates") renderTemplates();
+  if(state.tab === "history") renderHistory();
+  if(state.tab === "players") renderPlayers();
+  save();
+}
+
+function renderGameList(){
+  const el = document.getElementById("view-games");
+  const games = state.games.slice().sort((a,b) => (b.updated||0) - (a.updated||0));
+  el.innerHTML =
+    '<div class="topbar"><h1>Spellen</h1>' +
+      '<button class="pill solid" data-act="new-game">+ Nieuw</button></div>' +
+    (games.length
+      ? games.map(g => {
+          const st = standings(g);
+          const rounds = Math.max.apply(null, g.entrants.map(e => e.scores.length).concat([0]));
+          return '<button class="card ' + (g.won ? "won" : "") + '" data-act="open-game" data-gid="' + g.id + '">' +
+            '<span class="pc-info">' +
+              '<span class="pc-name"><span>' + esc(g.name) + '</span>' +
+                (g.won ? '<em class="chip gold">gewonnen</em>' : "") + '</span>' +
+              '<span class="pc-meta">' + plural(g.entrants.length,"speler","spelers") + ' · ' + goalText(g) + ' · ' + plural(rounds,"ronde","rondes") + '</span>' +
+              '<span class="mini">' + (st.length ? st.slice(0,4).map(s => esc(s.name) + " " + s.score).join(" · ") : "nog geen punten") + '</span>' +
+            '</span>' +
+            ico("chevronRight", 20, "#B4BFB8") +
+          '</button>';
+        }).join("")
+      : '<div class="empty"><div class="mark">🎲</div><h2>Geen spellen bezig</h2>' +
+        '<p>Je kunt meerdere spellen tegelijk open hebben. Start er een met of zonder template.</p>' +
+        '<button class="btn-primary" data-act="new-game">Nieuw spel starten</button></div>');
+}
+
+function renderGameDetail(){
+  const el = document.getElementById("view-games");
+  const g = findGame(state.openGameId);
+  if(!g){ state.openGameId = null; renderGameList(); return; }
+
+  const played = g.entrants.some(e => e.scores.length);
+  const st = standings(g);
+  const front = played && st.length ? st[0].score : null;
+  const winners = g.won ? g.won.pids.map(id => findPlayer(id).name) : [];
+
+  el.innerHTML =
+    '<div class="topbar">' +
+      '<button class="icon-btn" data-act="back" aria-label="Terug naar spellen">' +
+        ico("chevronLeft", 22) + '</button>' +
+      '<button class="title-btn" data-act="game-menu"><span>' + esc(g.name) + '</span>' +
+        ico("chevronDown", 16) + '</button>' +
+      '<button class="pill green" data-act="finish">' + ico("flag", 18) + '<span>Beëindig</span></button>' +
+    '</div>' +
+
+    (g.won
+      ? '<div class="banner"><span style="font-size:30px">🏆</span><span class="t"><strong>' +
+          (winners.length > 1 ? "Gelijkspel: " + esc(winners.join(" & ")) : esc(winners[0]) + " wint") +
+          '</strong><small>' + g.won.score + ' punten · winscore ' + g.winScore + '</small></span></div>' +
+        '<button class="btn-primary" data-act="finish">Eindstand bewaren</button>' +
+        '<button class="btn-flat" data-act="keep-playing">Toch doorspelen, winscore uit</button>' +
+        '<p class="section-label">Stand</p>'
+      : '<div class="row2">' +
+          '<button class="pill ghost" data-act="sort">' +
+            ico("sort", 18) + 'Sorteer</button>' +
+          '<button class="pill ghost" data-act="add-to-game">' +
+            ico("userPlus", 18) + 'Speler erbij</button>' +
+        '</div>') +
+
+    sortedEntrants(g).map(e => {
+      const p = findPlayer(e.pid), t = total(e);
+      const lead = !g.won && played && t === front && st.filter(s => s.score === front).length < g.entrants.length;
+      const isWinner = g.won && g.won.pids.indexOf(e.pid) > -1;
+      const pct = g.winScore ? Math.max(0, Math.min(100, Math.round(t / g.winScore * 100))) : 0;
+      return '<button class="card ' + (isWinner ? "won" : "") + '" data-act="score" data-pid="' + e.pid + '">' +
+        avatar(p) +
+        '<span class="pc-info">' +
+          '<span class="pc-name"><span>' + esc(p.name) + '</span>' +
+            (isWinner ? '<em class="chip gold">winnaar</em>' : lead ? '<em class="chip">leidt</em>' : "") + '</span>' +
+          '<span class="pc-meta">' + (g.levels ? "Level " + e.level + " · " : "") + plural(e.scores.length,"ronde","rondes") + '</span>' +
+          (g.winScore ? '<span class="bar"><i class="' + (pct >= 100 ? "full" : "") + '" style="width:' + pct + '%"></i></span>' : "") +
+        '</span>' +
+        '<span class="pc-score">' + t + '</span>' +
+      '</button>';
+    }).join("") +
+
+    '<p class="section-label">' + esc(goalText(g)) + ' · gesorteerd op ' + esc(SORTS[g.sort].toLowerCase()) + '</p>';
+}
+
+function renderTemplates(){
+  const el = document.getElementById("view-templates");
+  el.innerHTML =
+    '<div class="topbar"><h1>Templates</h1><button class="pill solid" data-act="tpl-new">+ Nieuw</button></div>' +
+    '<p style="color:var(--ink-soft); font-size:15px; margin:0 4px 16px">Een template onthoudt de winscore en of je levels bijhoudt. Bij het starten van een spel kies je er een.</p>' +
+    (state.templates.length
+      ? state.templates.map(t =>
+          '<div class="select-row">' +
+            '<span class="nm">' + esc(t.name) +
+              '<span class="sub">' + (t.winScore ? (t.winMode === "high" ? "eerst bij " + t.winScore + " wint" : "grens " + t.winScore + ", laagste wint") : "geen winscore") +
+              (t.levels ? " · levels aan" : "") + '</span></span>' +
+            '<button class="add-row" data-act="tpl-edit" data-tid="' + t.id + '">Wijzig</button>' +
+            '<button class="del" data-act="tpl-del" data-tid="' + t.id + '">Wis</button>' +
+          '</div>').join("")
+      : '<div class="empty"><div class="mark">🧩</div><h2>Nog geen templates</h2><p>Maak er een voor je vaste spellen, bijvoorbeeld eerst bij 200 punten.</p><button class="btn-primary" data-act="tpl-new">Template maken</button></div>');
+}
+
+function renderPlayers(){
+  const el = document.getElementById("view-players");
+  el.innerHTML =
+    '<div class="topbar"><h1>Spelers</h1></div>' +
+    '<input class="name-input" id="roster-input" placeholder="Naam van nieuwe speler" autocomplete="off" enterkeyhint="done">' +
+    '<button class="btn-primary" style="margin-top:12px" data-act="roster-add">Speler toevoegen</button>' +
+    '<p class="section-label">' + plural(state.players.length,"speler","spelers") + '</p>' +
+    (state.players.length
+      ? state.players.map(p =>
+          '<div class="select-row">' + avatar(p,"sm") + '<span class="nm">' + esc(p.name) + '</span>' +
+          '<button class="del" data-act="roster-del" data-pid="' + p.id + '">Verwijder</button></div>').join("")
+      : '<p style="color:var(--ink-soft); padding:0 4px">Nog niemand. Voeg je vaste speelgroep hierboven toe.</p>') +
+    '<p style="color:var(--ink-soft); font-size:13px; padding:22px 4px 0">Spelers, spellen, templates en historie worden bewaard in ' + store.label + ', alleen op dit apparaat.</p>';
+}
+
+function renderHistory(){
+  const el = document.getElementById("view-history");
+  el.innerHTML =
+    '<div class="topbar"><h1>Historie</h1></div>' +
+    (state.history.length
+      ? state.history.map((h,i) =>
+          '<div class="card" style="display:block">' +
+            '<div style="display:flex; align-items:baseline; gap:8px; margin-bottom:6px">' +
+              '<strong style="font-size:19px; letter-spacing:-.3px">' + esc(h.name) + '</strong>' +
+              '<span style="color:var(--ink-soft); font-size:14px; margin-left:auto">' + esc(h.date) + '</span></div>' +
+            h.standings.map((s,idx) =>
+              '<div class="stand"><span class="pos">' + (idx+1) + '</span><span class="nm">' + esc(s.name) + (idx === 0 ? " 🏆" : "") + '</span><span class="sc">' + s.score + '</span></div>').join("") +
+            '<button class="del" style="padding:10px 0 0" data-act="hist-del" data-idx="' + i + '">Verwijder uit historie</button>' +
+          '</div>').join("")
+      : '<div class="empty"><div class="mark">📜</div><h2>Nog geen afgeronde spellen</h2><p>Beëindig een spel en de eindstand landt hier.</p></div>');
+}
+
+/* ============================ nieuw spel ============================ */
+let setup = { sel:new Set(), tid:null, name:"", touched:false };
+function openSetup(){
+  setup = { sel:new Set(), tid:state.templates.length ? state.templates[0].id : null, name:"", touched:false };
+  openSheet("sheet-setup");
+  renderSetup();
+}
+function setupTemplate(){ return state.templates.find(t => t.id === setup.tid) || null; }
+function setupName(){
+  const t = setupTemplate();
+  return setup.touched ? setup.name : (t ? t.name : "Spelavond");
+}
+function renderSetup(){
+  const t = setupTemplate();
+  document.getElementById("setup-body").innerHTML =
+    '<p class="field-label" style="margin-top:0">Template</p>' +
+    '<button class="select-row ' + (setup.tid === null ? "is-on" : "") + '" data-act="setup-tpl" data-tid="">' +
+      '<span class="nm">Vrij spel<span class="sub">geen winscore, levels aan</span></span>' +
+      '<span class="tick">' + ico("check", 15) + '</span></button>' +
+    state.templates.map(tp =>
+      '<button class="select-row ' + (setup.tid === tp.id ? "is-on" : "") + '" data-act="setup-tpl" data-tid="' + tp.id + '">' +
+        '<span class="nm">' + esc(tp.name) + '<span class="sub">' +
+          (tp.winScore ? (tp.winMode === "high" ? "eerst bij " + tp.winScore + " wint" : "grens " + tp.winScore + ", laagste wint") : "geen winscore") +
+          (tp.levels ? " · levels aan" : "") + '</span></span>' +
+        '<span class="tick">' + ico("check", 15) + '</span></button>').join("") +
+
+    '<p class="field-label">Naam van dit spel</p>' +
+    '<input class="name-input" id="game-name" value="' + esc(setupName()) + '" placeholder="Spelavond" autocomplete="off">' +
+
+    '<p class="field-label">Wie doet mee?</p>' +
+    (state.players.length ? "" : '<p style="color:var(--ink-soft); font-size:15px; margin:0 4px 10px">Nog geen spelers. Typ hieronder een naam en tik op Toevoegen.</p>') +
+    state.players.map(p =>
+      '<button class="select-row ' + (setup.sel.has(p.id) ? "is-on" : "") + '" data-act="setup-toggle" data-pid="' + p.id + '">' +
+        avatar(p,"sm") + '<span class="nm">' + esc(p.name) + '</span>' +
+        '<span class="tick">' + ico("check", 15) + '</span></button>').join("") +
+    '<div class="select-row" style="gap:10px">' +
+      '<input class="nm" id="setup-new" placeholder="Nieuwe speler" style="border:0; background:none; outline:none" autocomplete="off" enterkeyhint="done">' +
+      '<button class="add-row" data-act="setup-add">Toevoegen</button></div>';
+  document.getElementById("setup-start").disabled = setup.sel.size === 0;
+  const inp = document.getElementById("game-name");
+  inp.addEventListener("input", () => { setup.name = inp.value; setup.touched = true; });
+}
+function startGame(){
+  const t = setupTemplate();
+  const typed = (document.getElementById("game-name").value || "").trim();
+  setup.name = typed; setup.touched = true;
+  const g = {
+    id:uid(),
+    name: typed || (t ? t.name : "Spelavond"),
+    templateId: t ? t.id : null,
+    winScore: t ? t.winScore : 0,
+    winMode: t ? t.winMode : "high",
+    levels: t ? t.levels : true,
+    sort: t && t.winMode === "low" ? "low" : "score",
+    date: today(), updated:Date.now(), won:null,
+    entrants: state.players.filter(p => setup.sel.has(p.id)).map(p => ({ pid:p.id, level:1, scores:[] }))
+  };
+  state.games.push(g);
+  state.openGameId = g.id;
+  closeAllSheets();
+  state.tab = "games";
+  render();
+}
+
+/* ============================ templates ============================ */
+let tpl = null;
+function openTemplate(id){
+  const found = state.templates.find(t => t.id === id);
+  tpl = found ? Object.assign({}, found) : { id:uid(), name:"", winScore:0, winMode:"high", levels:true, isNew:true };
+  document.getElementById("tpl-title").textContent = found ? "Template wijzigen" : "Nieuwe template";
+  openSheet("sheet-template");
+  renderTemplateForm();
+}
+function renderTemplateForm(){
+  document.getElementById("tpl-body").innerHTML =
+    '<p class="field-label" style="margin-top:0">Naam</p>' +
+    '<input class="name-input" id="tpl-name" value="' + esc(tpl.name) + '" placeholder="Bijvoorbeeld Flip 7" autocomplete="off">' +
+    '<p class="field-label">Winscore</p>' +
+    '<input class="name-input" id="tpl-score" inputmode="numeric" value="' + (tpl.winScore || "") + '" placeholder="0 = geen winscore">' +
+    '<p style="color:var(--ink-soft); font-size:14px; margin:8px 4px 0">Zodra iemand deze score haalt, gaat het spel direct in de winst.</p>' +
+    '<p class="field-label">Wie wint dan?</p>' +
+    '<div class="seg">' +
+      '<button data-act="tpl-mode" data-mode="high" class="' + (tpl.winMode === "high" ? "is-on" : "") + '">Hoogste score</button>' +
+      '<button data-act="tpl-mode" data-mode="low" class="' + (tpl.winMode === "low" ? "is-on" : "") + '">Laagste score</button>' +
+    '</div>' +
+    '<p class="field-label">Levels bijhouden</p>' +
+    '<div class="seg">' +
+      '<button data-act="tpl-levels" data-on="1" class="' + (tpl.levels ? "is-on" : "") + '">Aan</button>' +
+      '<button data-act="tpl-levels" data-on="" class="' + (tpl.levels ? "" : "is-on") + '">Uit</button>' +
+    '</div>';
+}
+function readTemplateForm(){
+  tpl.name = (document.getElementById("tpl-name").value || "").trim();
+  tpl.winScore = Math.max(0, parseInt(document.getElementById("tpl-score").value, 10) || 0);
+}
+function saveTemplate(){
+  readTemplateForm();
+  if(!tpl.name){ toast("Geef de template een naam"); return; }
+  const idx = state.templates.findIndex(t => t.id === tpl.id);
+  const clean = { id:tpl.id, name:tpl.name, winScore:tpl.winScore, winMode:tpl.winMode, levels:!!tpl.levels };
+  idx > -1 ? state.templates[idx] = clean : state.templates.push(clean);
+  closeAllSheets();
+  state.tab = "templates";
+  render();
+  toast("Template bewaard");
+}
+
+/* ============================ score sheet ============================ */
+let sc = { gid:null, pid:null, expr:"", view:"keypad" };
+
+/* De keypad is een kleine rekenmachine: expr is een reeks als "12+7-3".
+   Alleen plus en min, want scores tel je op en af, en niks anders. */
+function calc(x){
+  const clean = String(x || "").replace(/[+-]+$/, "");
+  if(!clean || clean === "-") return null;
+  const terms = clean.match(/[+-]?\d+/g);
+  if(!terms) return null;
+  return terms.reduce((a, t) => a + Number(t), 0);
+}
+function exprPretty(x){
+  return x.replace(/([+-])/g, " $1 ").replace(/^\s*-\s*/, "-").trim();
+}
+function keyPress(k){
+  const last = sc.expr.slice(-1);
+  const term = sc.expr.split(/[+-]/).pop();
+  if(k === "back") sc.expr = sc.expr.slice(0, -1);
+  else if(k === "clear") sc.expr = "";
+  else if(k === "=" || k === "sum"){
+    const v = calc(sc.expr);
+    sc.expr = v === null ? "" : String(v);
+  }
+  else if(k === "+" || k === "-"){
+    if(!sc.expr) { if(k === "-") sc.expr = "-"; }
+    else if(last === "+" || last === "-") sc.expr = sc.expr.slice(0, -1) + k;
+    else sc.expr += k;
+  }
+  else if(/^[0-9]$/.test(k)){
+    if(term.length >= 6) return;
+    if(term === "0") sc.expr = sc.expr.slice(0, -1);
+    sc.expr += k;
+  }
+  renderScore();
+}
+function openScore(gid,pid){
+  sc = { gid, pid, expr:"", view:"keypad" };
+  openSheet("sheet-score");
+  renderScore();
+}
+function scGame(){ return findGame(sc.gid); }
+function scEntrant(){ const g = scGame(); return g && g.entrants.find(e => e.pid === sc.pid); }
+function renderScore(){
+  const g = scGame(), e = scEntrant();
+  if(!g || !e){ closeSheet("sheet-score"); return; }
+  const p = findPlayer(sc.pid);
+  document.getElementById("score-title").textContent = sc.view === "keypad" ? "Punten toevoegen" : "Rondes";
+  document.getElementById("score-toggle").textContent = sc.view === "keypad" ? "Rondes" : "Keypad";
+  const body = document.getElementById("score-body");
+
+  if(sc.view === "history"){
+    body.innerHTML =
+      '<div class="score-player" style="padding-bottom:16px">' + avatar(p) + '<span class="nm">' + esc(p.name) + '</span></div>' +
+      (e.scores.length
+        ? e.scores.map((s,i) =>
+            '<div class="entry"><span class="rnd">Ronde ' + (i+1) + '</span>' +
+            '<span class="pts ' + (s.v < 0 ? "neg" : "") + '">' + (s.v > 0 ? "+" : "") + s.v + '</span>' +
+            '<button class="del" data-act="sc-del" data-idx="' + i + '">Wis</button></div>').join("")
+        : '<p style="color:var(--ink-soft); padding:4px">Nog geen punten voor ' + esc(p.name) + '.</p>') +
+      '<div class="total-row"><span>Totaal</span><span>' + total(e) + '</span></div>' +
+      '<button class="action danger" data-act="sc-kick">Haal ' + esc(p.name) + ' uit dit spel</button>';
+    return;
+  }
+
+  const som = calc(sc.expr);
+  const heeftSom = /[+-]/.test(sc.expr.slice(1));
+  const next = som === null ? null : total(e) + som;
+  const hits = g.winScore && next !== null && next >= g.winScore;
+  body.innerHTML =
+    '<div class="score-player">' + avatar(p) + '<span class="nm">' + esc(p.name) + '</span>' +
+      (g.levels
+        ? '<span class="level-stack">' +
+            '<button class="lvl-btn" data-act="lvl-up" aria-label="Level omhoog">' + ico("chevronUp", 26) + '</button>' +
+            '<span class="lvl-read">Level<b>' + e.level + '</b></span>' +
+            '<button class="lvl-btn down" data-act="lvl-down" aria-label="Level omlaag"' + (e.level <= 1 ? " disabled" : "") + '>' + ico("chevronDown", 26) + '</button>' +
+          '</span>'
+        : "") +
+    '</div>' +
+    '<div class="display">' +
+      '<div class="sum">' + (heeftSom ? esc(exprPretty(sc.expr)) : "&nbsp;") + '</div>' +
+      '<div class="val ' + (som === null ? "placeholder" : "") + '">' + (som === null ? "&mdash;" : som) + '</div>' +
+      '<div class="lbl">Punten' + (heeftSom ? " bij elkaar" : "") + '</div>' +
+      '<div class="hint">' + (som !== null
+        ? "Totaal wordt " + next + (hits ? " <b>· winscore gehaald</b>" : (g.winScore ? " van " + g.winScore : ""))
+        : "Totaal nu " + total(e) + " · ronde " + (e.scores.length + 1) + " · tik + of &minus; om op te tellen") + '</div>' +
+    '</div>' +
+    '<button class="btn-primary" data-act="sc-save"' + (som === null ? " disabled" : "") + '>' +
+      (heeftSom ? "Opslaan als " + som : "Opslaan") + '</button>' +
+    '<div class="keypad">' +
+      [7,8,9].map(k => '<button class="key" data-key="' + k + '">' + k + '</button>').join("") +
+      '<button class="key plain" data-key="back" aria-label="Wis cijfer">' + ico("backspace", 26) + '</button>' +
+      [4,5,6].map(k => '<button class="key" data-key="' + k + '">' + k + '</button>').join("") +
+      '<button class="key op" data-key="-" aria-label="Min">&minus;</button>' +
+      [1,2,3].map(k => '<button class="key" data-key="' + k + '">' + k + '</button>').join("") +
+      '<button class="key op" data-key="+" aria-label="Plus">+</button>' +
+      '<button class="key clr" data-key="clear" aria-label="Alles wissen">C</button>' +
+      '<button class="key" data-key="0">0</button>' +
+      '<button class="key" data-key="00">00</button>' +
+      '<button class="key eq" data-key="=" aria-label="Uitrekenen">=</button>' +
+    '</div>';
+}
+function saveScore(){
+  const v = calc(sc.expr);
+  if(v === null) return;
+  const g = scGame(), e = scEntrant();
+  e.scores.push({ v, t:Date.now() });
+  touch(g);
+  const win = evaluateWin(g);
+  closeSheet("sheet-score");
+  if(win && !g.won){ g.won = win; render(); winSheet(g); }
+  else { render(); toast((v > 0 ? "+" : "") + v + " voor " + findPlayer(sc.pid).name + " · totaal " + total(e)); }
+}
+
+/* ============================ sheets ============================ */
+function actionSheet(html, noCancel){
+  document.getElementById("action-body").innerHTML = html + (noCancel ? "" : '<button class="action" data-close>Annuleer</button>');
+  openSheet("sheet-action");
+}
+function winSheet(g){
+  const names = g.won.pids.map(id => esc(findPlayer(id).name));
+  actionSheet(
+    '<div class="trophy">🏆</div>' +
+    '<h2 class="win-title">' + (names.length > 1 ? "Gelijkspel: " + names.join(" & ") : names[0] + " wint") + '</h2>' +
+    '<p class="win-sub">' + g.won.score + ' punten · winscore ' + g.winScore + ' gehaald in ' + esc(g.name) + '</p>' +
+    standings(g).map((s,i) => '<div class="stand"><span class="pos">' + (i+1) + '</span><span class="nm">' + esc(s.name) + '</span><span class="sc">' + s.score + '</span></div>').join("") +
+    '<button class="btn-primary" style="margin:16px 0 8px" data-act="finish-confirm" data-gid="' + g.id + '">Bewaar in historie</button>' +
+    '<button class="action" data-act="keep-playing" data-gid="' + g.id + '">Toch doorspelen, winscore uit</button>' +
+    '<button class="action" data-close>Later beslissen</button>', true);
+}
+function sortMenu(g){
+  actionSheet('<p class="section-label" style="margin-top:0">Sorteer op</p>' +
+    Object.keys(SORTS).map(k => '<button class="action" data-act="set-sort" data-sort="' + k + '">' + SORTS[k] + (g.sort === k ? " ✓" : "") + '</button>').join(""));
+}
+function gameMenu(g){
+  actionSheet(
+    '<p class="section-label" style="margin-top:0">' + esc(g.name) + ' · ' + esc(goalText(g)) + '</p>' +
+    '<button class="action" data-act="rename">Naam wijzigen</button>' +
+    '<button class="action" data-act="edit-goal">Winscore aanpassen</button>' +
+    '<button class="action" data-act="toggle-levels">Levels ' + (g.levels ? "uitzetten" : "aanzetten") + '</button>' +
+    '<button class="action" data-act="reset">Alle scores op 0 zetten</button>' +
+    '<button class="action danger" data-act="scrap">Spel weggooien</button>');
+}
+function renameSheet(g){
+  actionSheet('<p class="section-label" style="margin-top:0">Naam van het spel</p>' +
+    '<input class="name-input" id="rename-input" value="' + esc(g.name) + '" autocomplete="off">' +
+    '<button class="btn-primary" style="margin:12px 0 8px" data-act="rename-save">Naam opslaan</button>');
+  setTimeout(() => { const i = document.getElementById("rename-input"); if(i) i.focus(); }, 250);
+}
+function goalSheet(g){
+  actionSheet('<p class="section-label" style="margin-top:0">Winscore voor ' + esc(g.name) + '</p>' +
+    '<input class="name-input" id="goal-input" inputmode="numeric" value="' + (g.winScore || "") + '" placeholder="0 = geen winscore">' +
+    '<div class="seg" style="margin-top:12px">' +
+      '<button data-act="goal-mode" data-mode="high" class="' + (g.winMode === "high" ? "is-on" : "") + '">Hoogste wint</button>' +
+      '<button data-act="goal-mode" data-mode="low" class="' + (g.winMode === "low" ? "is-on" : "") + '">Laagste wint</button>' +
+    '</div>' +
+    '<button class="btn-primary" style="margin:12px 0 8px" data-act="goal-save">Winscore opslaan</button>');
+}
+function addToGameSheet(g){
+  const free = state.players.filter(p => !g.entrants.some(e => e.pid === p.id));
+  actionSheet('<p class="section-label" style="margin-top:0">Speler erbij</p>' +
+    free.map(p => '<button class="action" data-act="join" data-pid="' + p.id + '">' + esc(p.name) + '</button>').join("") +
+    '<div class="select-row" style="gap:10px">' +
+      '<input class="nm" id="join-new" placeholder="Nieuwe speler" style="border:0; background:none; outline:none" autocomplete="off" enterkeyhint="done">' +
+      '<button class="add-row" data-act="join-new">Toevoegen</button></div>');
+}
+function finishSheet(g){
+  actionSheet('<p class="section-label" style="margin-top:0">Eindstand ' + esc(g.name) + '</p>' +
+    standings(g).map((s,i) => '<div class="stand"><span class="pos">' + (i+1) + '</span><span class="nm">' + esc(s.name) + (i === 0 ? " 🏆" : "") + '</span><span class="sc">' + s.score + '</span></div>').join("") +
+    '<button class="btn-primary" style="margin:14px 0 8px" data-act="finish-confirm" data-gid="' + g.id + '">Bewaar en sluit spel</button>');
+}
+
+
+/* ============================ tools ============================ */
+const TOOLS = { timer:"Timer", dice:"Dobbelen", pick:"Kiezer" };
+const TOOLICON = { timer:"timer", dice:"dices", pick:"shuffle" };
+const PIPS = { 1:[4], 2:[0,8], 3:[0,4,8], 4:[0,2,6,8], 5:[0,2,4,6,8], 6:[0,2,3,5,6,8] };
+const reduced = () => window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+let timer = { left:30, endAt:null, running:false, iv:null, done:false };
+let dice = { vals:[], rolling:false, iv:null, last:[] };
+let pick = { who:null, spinning:false, iv:null, order:null };
+let audio = null;
+
+function mmss(sec){
+  const s = Math.max(0, Math.ceil(sec));
+  return Math.floor(s/60) + ":" + String(s % 60).padStart(2,"0");
+}
+function beep(times){
+  try {
+    audio = audio || new (window.AudioContext || window.webkitAudioContext)();
+    for(let i = 0; i < times; i++){
+      const osc = audio.createOscillator(), gain = audio.createGain();
+      osc.type = "triangle";
+      osc.frequency.value = i % 2 ? 880 : 660;
+      osc.connect(gain); gain.connect(audio.destination);
+      const t0 = audio.currentTime + i * 0.42;
+      gain.gain.setValueAtTime(0.0001, t0);
+      gain.gain.exponentialRampToValueAtTime(0.35, t0 + 0.03);
+      gain.gain.exponentialRampToValueAtTime(0.0001, t0 + 0.34);
+      osc.start(t0); osc.stop(t0 + 0.36);
+    }
+  } catch(e){}
+  if(navigator.vibrate) navigator.vibrate([220,120,220]);
+}
+
+function renderTools(){
+  const el = document.getElementById("view-tools");
+  const sub = state.tools.sub;
+  el.innerHTML =
+    '<div class="topbar"><h1>Tools</h1></div>' +
+    '<div class="subnav">' +
+      Object.keys(TOOLS).map(k => '<button data-act="tool-sub" data-sub="' + k + '" class="' + (sub === k ? "is-on" : "") + '">' + ico(TOOLICON[k], 18) + '<span>' + TOOLS[k] + '</span></button>').join("") +
+    '</div>' +
+    '<div class="tool-card" id="tool-stage">' + (sub === "timer" ? timerHTML() : sub === "dice" ? diceHTML() : pickHTML()) + '</div>' +
+    '<p class="tool-hint">' + (sub === "timer"
+      ? "Tik op de tijd om een eigen duur in te stellen. Hij loopt door als je naar een ander tabblad gaat."
+      : sub === "dice" ? "Kies hoeveel stenen je gooit. De worp klinkt hetzelfde als de echte, maar rolt nooit van de tafel."
+      : "Kiest iemand uit je spelerslijst, of maakt in één tik een willekeurige beurtvolgorde.") + '</p>';
+}
+
+/* ---- timer ---- */
+function timerHTML(){
+  const totaal = state.tools.secs;
+  const frac = totaal ? Math.max(0, Math.min(1, timer.left / totaal)) : 0;
+  const C = 2 * Math.PI * 98;
+  return '<div class="chiprow">' +
+      [30,60,120,300].map(sec => '<button class="chipbtn ' + (totaal === sec ? "is-on" : "") + '" data-act="t-preset" data-secs="' + sec + '">' + (sec < 60 ? sec + "s" : (sec/60) + "m") + '</button>').join("") +
+    '</div>' +
+    '<button class="ring' + (timer.done ? " done" : "") + '" id="t-ring-wrap" data-act="t-edit" aria-label="Duur aanpassen">' +
+      '<svg width="220" height="220" viewBox="0 0 220 220">' +
+        '<circle cx="110" cy="110" r="98" fill="none" stroke="#E7ECE9" stroke-width="13"/>' +
+        '<circle id="t-ring" cx="110" cy="110" r="98" fill="none" stroke="' + (timer.done ? "#3E8E5A" : "#22503A") + '" stroke-width="13" stroke-linecap="round" stroke-dasharray="' + C.toFixed(1) + '" stroke-dashoffset="' + (C * (1 - frac)).toFixed(1) + '"/>' +
+      '</svg>' +
+      '<span class="mid"><span class="t" id="t-time">' + mmss(timer.left) + '</span>' +
+      '<span class="s" id="t-sub">' + (timer.done ? "tijd om" : timer.running ? "loopt" : "tik om te wijzigen") + '</span></span>' +
+    '</button>' +
+    '<div class="btnrow">' +
+      '<button class="btn-primary" data-act="t-start">' + ico(timer.running ? "pause" : "play", 20) + '<span>' + (timer.running ? "Pauze" : timer.left <= 0 ? "Opnieuw" : "Start") + '</span></button>' +
+      '<button class="btn-sec" data-act="t-reset" aria-label="Reset">' + ico("reset", 20) + '</button>' +
+    '</div>';
+}
+function timerPaint(){
+  const time = document.getElementById("t-time");
+  if(!time) return;
+  const totaal = state.tools.secs, C = 2 * Math.PI * 98;
+  const frac = totaal ? Math.max(0, Math.min(1, timer.left / totaal)) : 0;
+  time.textContent = mmss(timer.left);
+  const ring = document.getElementById("t-ring");
+  if(ring) ring.setAttribute("stroke-dashoffset", (C * (1 - frac)).toFixed(1));
+  const sub = document.getElementById("t-sub");
+  if(sub) sub.textContent = timer.done ? "tijd om" : timer.running ? "loopt" : "tik om te wijzigen";
+}
+function timerTick(){
+  timer.left = Math.max(0, (timer.endAt - Date.now()) / 1000);
+  if(timer.left <= 0){
+    clearInterval(timer.iv); timer.iv = null; timer.running = false; timer.done = true;
+    beep(3);
+    if(state.tab === "tools" && state.tools.sub === "timer") renderTools();
+    return;
+  }
+  timerPaint();
+}
+function primeAudio(){
+  try {
+    audio = audio || new (window.AudioContext || window.webkitAudioContext)();
+    if(audio.state === "suspended") audio.resume();
+  } catch(e){}
+}
+function timerStart(){
+  primeAudio();
+  if(timer.running){ timer.left = Math.max(0,(timer.endAt - Date.now())/1000); clearInterval(timer.iv); timer.iv = null; timer.running = false; renderTools(); return; }
+  if(timer.left <= 0) timer.left = state.tools.secs;
+  timer.done = false; timer.running = true;
+  timer.endAt = Date.now() + timer.left * 1000;
+  clearInterval(timer.iv);
+  timer.iv = setInterval(timerTick, 100);
+  renderTools();
+}
+function timerSet(sec){
+  clearInterval(timer.iv); timer.iv = null;
+  state.tools.secs = sec; timer.left = sec; timer.running = false; timer.done = false;
+  render();
+}
+
+/* ---- dobbelstenen ---- */
+function dieHTML(v, rolling){
+  const on = PIPS[v] || [];
+  let cells = "";
+  for(let i = 0; i < 9; i++) cells += '<i class="' + (on.indexOf(i) > -1 ? "on" : "") + '"></i>';
+  return '<span class="die' + (rolling ? " rolling" : "") + '">' + cells + '</span>';
+}
+function diceHTML(){
+  const n = state.tools.dice;
+  const som = dice.vals.reduce((a,b) => a + b, 0);
+  return '<div class="chiprow">' +
+      [1,2,3,4,5,6].map(i => '<button class="circlebtn ' + (n === i ? "is-on" : "") + '" data-act="d-count" data-n="' + i + '">' + i + '</button>').join("") +
+    '</div>' +
+    '<div class="dicebox">' + (dice.vals.length
+      ? dice.vals.map(v => dieHTML(v, dice.rolling)).join("")
+      : '<span style="color:var(--ink-soft); font-weight:600">Nog niet gegooid</span>') + '</div>' +
+    (dice.vals.length && !dice.rolling
+      ? '<div class="bigtotal">' + som + '</div><div style="color:var(--ink-soft); font-size:14px; font-weight:600">' +
+        (dice.vals.length > 1 ? "totaal van " + dice.vals.join(" + ") : "geworpen") +
+        (dice.last.length ? ' · eerder: ' + dice.last.join(", ") : "") + '</div>'
+      : '<div class="bigtotal">&nbsp;</div>') +
+    '<button class="btn-primary" style="margin-top:14px" data-act="d-roll"' + (dice.rolling ? " disabled" : "") + '>' + ico("dices", 20) + '<span>' + (dice.rolling ? "Rollen…" : "Gooien!") + '</span></button>';
+}
+function roll(){
+  const n = state.tools.dice;
+  const finals = [];
+  for(let i = 0; i < n; i++) finals.push(1 + Math.floor(Math.random() * 6));
+  const land = () => {
+    dice.vals = finals; dice.rolling = false;
+    dice.last = [finals.reduce((a,b) => a+b,0)].concat(dice.last).slice(0,3);
+    renderTools();
+  };
+  if(reduced()){ land(); return; }
+  dice.rolling = true;
+  clearInterval(dice.iv);
+  dice.iv = setInterval(() => {
+    dice.vals = finals.map(() => 1 + Math.floor(Math.random() * 6));
+    const box = document.querySelector("#tool-stage .dicebox");
+    if(box) box.innerHTML = dice.vals.map(v => dieHTML(v, true)).join("");
+  }, 90);
+  renderTools();
+  setTimeout(() => { clearInterval(dice.iv); dice.iv = null; land(); }, 900);
+}
+
+/* ---- kiezer ---- */
+function pickPool(){ return state.players.filter(p => state.tools.off.indexOf(p.id) < 0); }
+function pickHTML(){
+  if(!state.players.length){
+    return '<p style="font-weight:700; font-size:19px; margin:14px 0 6px">Nog geen spelers</p>' +
+      '<p style="color:var(--ink-soft); margin:0 0 18px">Voeg ze toe op het tabblad Spelers, dan kan de kiezer aan het werk.</p>';
+  }
+  const pool = pickPool();
+  const stage = pick.order
+    ? pick.order.map((p,i) => '<div class="stand"><span class="pos">' + (i+1) + '</span>' + avatar(p,"sm") + '<span class="nm" style="margin-left:4px">' + esc(p.name) + '</span></div>').join("")
+    : pick.who
+      ? avatar(pick.who) + '<div class="who">' + esc(pick.who.name) + '</div>' +
+        '<div style="color:var(--ink-soft); font-weight:600">' + (pick.spinning ? "aan het kiezen…" : "is gekozen") + '</div>'
+      : '<div class="ph">?</div><div style="color:var(--ink-soft); font-weight:600">Kies iemand uit ' + plural(pool.length,"speler","spelers") + '</div>';
+  return '<div class="chiprow">' +
+      state.players.map(p => '<button class="pickchip ' + (state.tools.off.indexOf(p.id) < 0 ? "is-on" : "") + '" data-act="p-toggle" data-pid="' + p.id + '">' + avatar(p,"sm") + esc(p.name) + '</button>').join("") +
+    '</div>' +
+    '<div class="pickstage' + (pick.who && !pick.spinning ? " landed" : "") + '">' + stage + '</div>' +
+    '<button class="btn-primary" data-act="p-pick"' + (pick.spinning || pool.length < 1 ? " disabled" : "") + '>Kies iemand</button>' +
+    '<button class="btn-sec" style="width:100%; margin-top:10px" data-act="p-order"' + (pick.spinning || pool.length < 2 ? " disabled" : "") + '>' + ico("shuffle", 19) + '<span>Willekeurige beurtvolgorde</span></button>';
+}
+function pickSomeone(){
+  const pool = pickPool();
+  if(!pool.length){ toast("Zet minstens één speler aan"); return; }
+  pick.order = null;
+  const final = pool[Math.floor(Math.random() * pool.length)];
+  if(reduced() || pool.length === 1){ pick.who = final; pick.spinning = false; renderTools(); return; }
+  pick.spinning = true;
+  clearInterval(pick.iv);
+  pick.iv = setInterval(() => {
+    pick.who = pool[Math.floor(Math.random() * pool.length)];
+    renderTools();
+  }, 110);
+  setTimeout(() => {
+    clearInterval(pick.iv); pick.iv = null;
+    pick.who = final; pick.spinning = false; renderTools();
+    if(navigator.vibrate) navigator.vibrate(60);
+  }, 1200);
+}
+function pickOrder(){
+  const pool = pickPool().slice();
+  for(let i = pool.length - 1; i > 0; i--){
+    const j = Math.floor(Math.random() * (i + 1));
+    const t = pool[i]; pool[i] = pool[j]; pool[j] = t;
+  }
+  pick.who = null; pick.order = pool;
+  renderTools();
+}
+
+/* ============================ events ============================ */
+document.addEventListener("click", ev => {
+  if(ev.target.closest("[data-close]")){ closeAllSheets(); return; }
+
+  const key = ev.target.closest("[data-key]");
+  if(key){
+    const k = key.dataset.key;
+    if(k === "00"){ keyPress("0"); keyPress("0"); }
+    else keyPress(k);
+    return;
+  }
+
+  const btn = ev.target.closest("[data-act]");
+  if(!btn) return;
+  const act = btn.dataset.act, pid = btn.dataset.pid, tid = btn.dataset.tid;
+  const g = findGame(btn.dataset.gid || state.openGameId);
+
+  switch(act){
+    case "tab":
+      if(state.tab === "games" && btn.dataset.tab === "games") state.openGameId = null;
+      state.tab = btn.dataset.tab; render(); window.scrollTo(0,0); break;
+
+    /* spellen */
+    case "new-game": openSetup(); break;
+    case "open-game": state.openGameId = btn.dataset.gid; render(); window.scrollTo(0,0); break;
+    case "back": state.openGameId = null; render(); break;
+    case "score": openScore(g.id, pid); break;
+    case "sort": sortMenu(g); break;
+    case "set-sort": g.sort = btn.dataset.sort; closeAllSheets(); render(); break;
+    case "game-menu": gameMenu(g); break;
+    case "rename": renameSheet(g); break;
+    case "rename-save": {
+      const v = (document.getElementById("rename-input").value || "").trim();
+      if(v) g.name = v;
+      closeAllSheets(); render(); break;
+    }
+    case "edit-goal": goalSheet(g); break;
+    case "goal-mode": g.winMode = btn.dataset.mode; goalSheet(g); break;
+    case "goal-save": {
+      g.winScore = Math.max(0, parseInt(document.getElementById("goal-input").value,10) || 0);
+      g.won = evaluateWin(g);
+      closeAllSheets(); render();
+      if(g.won) winSheet(g); else toast(g.winScore ? "Winscore " + g.winScore : "Winscore uit");
+      break;
+    }
+    case "toggle-levels": g.levels = !g.levels; closeAllSheets(); render(); break;
+    case "reset":
+      g.entrants.forEach(e => { e.scores = []; e.level = 1; });
+      g.won = null; touch(g); closeAllSheets(); render(); toast("Alles terug naar 0"); break;
+    case "scrap":
+      state.games = state.games.filter(x => x.id !== g.id);
+      state.openGameId = null; closeAllSheets(); render(); toast("Spel weggegooid"); break;
+    case "keep-playing":
+      g.winScore = 0; g.won = null; touch(g); closeAllSheets(); render(); toast("Winscore uit, jullie kunnen doorspelen"); break;
+    case "add-to-game": addToGameSheet(g); break;
+    case "join": g.entrants.push({ pid, level:1, scores:[] }); touch(g); closeAllSheets(); render(); break;
+    case "join-new": {
+      const p = addPlayer(document.getElementById("join-new").value);
+      if(!p){ toast("Vul eerst een naam in"); break; }
+      g.entrants.push({ pid:p.id, level:1, scores:[] }); touch(g); closeAllSheets(); render(); break;
+    }
+    case "finish": finishSheet(g); break;
+    case "finish-confirm": {
+      state.history.unshift({ name:g.name, date:g.date, winScore:g.winScore, standings:standings(g).map(s => ({ name:s.name, score:s.score })) });
+      state.games = state.games.filter(x => x.id !== g.id);
+      state.openGameId = null; closeAllSheets(); state.tab = "history"; render(); toast("Eindstand in historie"); break;
+    }
+
+    /* score sheet */
+    case "lvl-up": scEntrant().level++; touch(scGame()); renderScore(); render(); break;
+    case "lvl-down": { const e = scEntrant(); if(e.level > 1) e.level--; touch(scGame()); renderScore(); render(); break; }
+    case "sc-save": saveScore(); break;
+    case "sc-del": {
+      const gm = scGame();
+      scEntrant().scores.splice(Number(btn.dataset.idx),1);
+      gm.won = evaluateWin(gm); touch(gm); renderScore(); render(); toast("Ronde gewist"); break;
+    }
+    case "sc-kick": {
+      const gm = scGame();
+      gm.entrants = gm.entrants.filter(e => e.pid !== sc.pid);
+      gm.won = evaluateWin(gm); touch(gm);
+      closeAllSheets();
+      if(!gm.entrants.length){ state.games = state.games.filter(x => x.id !== gm.id); state.openGameId = null; }
+      render(); toast("Speler uit het spel gehaald"); break;
+    }
+
+    /* tools */
+    case "tool-sub": state.tools.sub = btn.dataset.sub; render(); break;
+    case "t-preset": timerSet(Number(btn.dataset.secs)); break;
+    case "t-start": timerStart(); break;
+    case "t-reset":
+      clearInterval(timer.iv); timer.iv = null;
+      timer.running = false; timer.done = false; timer.left = state.tools.secs;
+      renderTools(); break;
+    case "t-edit": {
+      const m = Math.floor(state.tools.secs / 60), sec = state.tools.secs % 60;
+      actionSheet('<p class="section-label" style="margin-top:0">Eigen duur</p>' +
+        '<div style="display:flex; gap:10px">' +
+          '<input class="name-input" id="t-min" inputmode="numeric" value="' + m + '" placeholder="min">' +
+          '<input class="name-input" id="t-sec" inputmode="numeric" value="' + sec + '" placeholder="sec">' +
+        '</div>' +
+        '<button class="btn-primary" style="margin:12px 0 8px" data-act="t-edit-save">Duur instellen</button>');
+      break;
+    }
+    case "t-edit-save": {
+      const m = Math.max(0, parseInt(document.getElementById("t-min").value,10) || 0);
+      const sec = Math.max(0, parseInt(document.getElementById("t-sec").value,10) || 0);
+      const totaal = Math.min(5999, m * 60 + sec);
+      if(!totaal){ toast("Zet een tijd van minstens 1 seconde"); break; }
+      closeAllSheets(); timerSet(totaal); break;
+    }
+    case "d-count": state.tools.dice = Number(btn.dataset.n); dice.vals = []; render(); break;
+    case "d-roll": roll(); break;
+    case "p-toggle": {
+      const off = state.tools.off, i = off.indexOf(pid);
+      i < 0 ? off.push(pid) : off.splice(i,1);
+      pick.who = null; pick.order = null; render(); break;
+    }
+    case "p-pick": pickSomeone(); break;
+    case "p-order": pickOrder(); break;
+
+    /* setup */
+    case "setup-tpl": setup.tid = tid || null; renderSetup(); break;
+    case "setup-toggle": setup.sel.has(pid) ? setup.sel.delete(pid) : setup.sel.add(pid); renderSetup(); break;
+    case "setup-add": {
+      const inp = document.getElementById("setup-new");
+      const p = addPlayer(inp.value);
+      if(!p){ toast("Vul eerst een naam in"); break; }
+      setup.sel.add(p.id); renderSetup(); save(); break;
+    }
+
+    /* templates */
+    case "tpl-new": openTemplate(null); break;
+    case "tpl-edit": openTemplate(tid); break;
+    case "tpl-del": state.templates = state.templates.filter(t => t.id !== tid); render(); toast("Template gewist"); break;
+    case "tpl-mode": readTemplateForm(); tpl.winMode = btn.dataset.mode; renderTemplateForm(); break;
+    case "tpl-levels": readTemplateForm(); tpl.levels = !!btn.dataset.on; renderTemplateForm(); break;
+
+    /* spelers */
+    case "roster-add": {
+      const inp = document.getElementById("roster-input");
+      if(!addPlayer(inp.value)){ toast("Vul eerst een naam in"); break; }
+      render(); break;
+    }
+    case "roster-del": {
+      if(state.games.some(x => x.entrants.some(e => e.pid === pid))){ toast("Deze speler doet nog mee in een lopend spel"); break; }
+      state.players = state.players.filter(p => p.id !== pid); render(); break;
+    }
+    case "hist-del": state.history.splice(Number(btn.dataset.idx),1); render(); break;
+  }
+});
+
+document.addEventListener("keydown", ev => {
+  const enters = { "setup-new":"setup-add", "roster-input":"roster-add", "join-new":"join-new", "rename-input":"rename-save", "tpl-score":null, "goal-input":"goal-save" };
+  if(ev.key === "Enter" && ev.target.id in enters){
+    const a = enters[ev.target.id];
+    ev.preventDefault();
+    if(a){ const b = document.querySelector('[data-act="' + a + '"]'); if(b) b.click(); }
+    else ev.target.blur();
+    return;
+  }
+  if(ev.key === "Escape"){ closeAllSheets(); return; }
+  const scoreOpen = document.getElementById("sheet-score").classList.contains("is-open");
+  if(scoreOpen && sc.view === "keypad" && !/^(INPUT|TEXTAREA)$/.test(ev.target.tagName)){
+    if(/^[0-9]$/.test(ev.key)) keyPress(ev.key);
+    else if(ev.key === "Backspace") keyPress("back");
+    else if(ev.key === "+" || ev.key === "-") keyPress(ev.key);
+    else if(ev.key === "=") keyPress("=");
+    else if(ev.key.toLowerCase() === "c" || ev.key === "Delete") keyPress("clear");
+    else if(ev.key === "Enter") saveScore();
+  }
+});
+
+
+document.getElementById("setup-start").addEventListener("click", startGame);
+document.getElementById("tpl-save").addEventListener("click", saveTemplate);
+document.getElementById("score-toggle").addEventListener("click", () => {
+  sc.view = sc.view === "keypad" ? "history" : "keypad";
+  renderScore();
+});
+
+/* ============================ start ============================ */
+(async () => {
+  await load();
+  if(!state.seeded){
+    state.seeded = true;
+    state.templates = state.templates.concat([
+      { id:uid(), name:"Flip 7", winScore:200, winMode:"high", levels:false },
+      { id:uid(), name:"Skip-Bo", winScore:500, winMode:"high", levels:false },
+      { id:uid(), name:"Phase 10", winScore:0, winMode:"low", levels:true },
+      { id:uid(), name:"Pesten", winScore:100, winMode:"low", levels:false }
+    ]);
+  }
+  timer.left = state.tools.secs;
+  render();
+})();
+</script>
+</body>
+</html>

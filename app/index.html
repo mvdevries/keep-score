@@ -220,7 +220,7 @@
   .p2-finger.is-winner .p2-circle{animation:p2pulse .7s ease-in-out infinite alternate; box-shadow:0 0 0 7px rgba(62,142,90,.22), 0 4px 14px rgba(18,33,43,.18);}
   .p2-finger.is-winner .p2-ring{animation:none; border-color:var(--fc); opacity:.4;}
   .p2-finger.is-out{z-index:1;}
-  .p2-finger.is-out .p2-circle{background:#B9C2BC; opacity:.5;}
+  .p2-finger.is-out .p2-circle{background:var(--fc); opacity:.4; filter:grayscale(.35) brightness(.92); box-shadow:none;}
   .p2-finger.is-out .p2-ring{animation:none; opacity:0;}
   @keyframes p2spin{to{transform:rotate(360deg);}}
   @keyframes p2pulse{from{transform:scale(1);}to{transform:scale(1.1);}}

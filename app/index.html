@@ -208,7 +208,18 @@
   .pickchip .avatar{width:30px; height:30px; font-size:13px; filter:grayscale(1); opacity:.5;}
   .pickchip.is-on{border-color:var(--green); color:var(--ink);}
   .pickchip.is-on .avatar{filter:none; opacity:1;}
-  @media (prefers-reduced-motion:reduce){ .die.rolling,.ring.done,.pickstage.landed{animation:none;} }
+
+  .p2-stage{position:relative; min-height:360px; border-radius:18px; background:var(--bg); border:2px dashed var(--line); touch-action:none; user-select:none; overflow:hidden;}
+  .p2-empty{position:absolute; inset:0; display:grid; place-content:center; padding:0 24px; text-align:center; color:var(--ink-soft); font-weight:600; font-size:15px;}
+  .p2-finger{position:absolute; top:0; left:0; width:74px; height:74px; margin:-37px 0 0 -37px; border-radius:999px; display:grid; place-items:center; color:#fff; font-weight:800; font-size:24px; background:var(--fc); box-shadow:0 4px 14px rgba(18,33,43,.18); transition:background-color .25s, opacity .25s, box-shadow .25s;}
+  .p2-finger .p2-ring{position:absolute; inset:-9px; border-radius:999px; border:4px solid transparent; border-top-color:var(--fc); border-right-color:var(--fc); animation:p2spin .85s linear infinite;}
+  .p2-finger.is-winner{z-index:5; animation:p2pulse .7s ease-in-out infinite alternate; box-shadow:0 0 0 7px rgba(62,142,90,.22), 0 4px 14px rgba(18,33,43,.18);}
+  .p2-finger.is-winner .p2-ring{animation:none; border-color:var(--fc); opacity:.4;}
+  .p2-finger.is-out{z-index:1; background:#B9C2BC; opacity:.5;}
+  .p2-finger.is-out .p2-ring{animation:none; opacity:0;}
+  @keyframes p2spin{to{transform:rotate(360deg);}}
+  @keyframes p2pulse{from{transform:scale(1);}to{transform:scale(1.1);}}
+  @media (prefers-reduced-motion:reduce){ .die.rolling,.ring.done,.pickstage.landed,.p2-finger .p2-ring,.p2-finger.is-winner{animation:none;} }
 
   #toast{position:fixed; left:50%; bottom:106px; transform:translate(-50%,20px); z-index:60; background:#12212B; color:#fff; font-size:15px; font-weight:600; padding:12px 18px; border-radius:14px; opacity:0; pointer-events:none; transition:all .22s ease; max-width:90%; text-align:center;}
   #toast.is-on{opacity:1; transform:translate(-50%,0);}
@@ -303,6 +314,7 @@ const ICONS = {
   reset: '<path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/>',
   flag: '<path d="M4 22V4a1 1 0 0 1 .4-.8A6 6 0 0 1 8 2c3 0 5 2 7.333 2q2 0 3.067-.8A1 1 0 0 1 20 4v10a1 1 0 0 1-.4.8A6 6 0 0 1 16 16c-3 0-5-2-8-2a6 6 0 0 0-4 1.528"/>',
   trash: '<path d="M10 11v6"/><path d="M14 11v6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M3 6h18"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>',
+  touch: '<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="3.2"/>',
 };
 function ico(name, size, stroke){
   const s = size || 22;
@@ -863,8 +875,8 @@ function finishSheet(g){
 
 
 /* ============================ tools ============================ */
-const TOOLS = { timer:"Timer", dice:"Dobbelen", pick:"Kiezer" };
-const TOOLICON = { timer:"timer", dice:"dices", pick:"shuffle" };
+const TOOLS = { timer:"Timer", dice:"Dobbelen", pick:"Kiezer", pick2:"Kiezer 2" };
+const TOOLICON = { timer:"timer", dice:"dices", pick:"shuffle", pick2:"touch" };
 const PIPS = { 1:[4], 2:[0,8], 3:[0,4,8], 4:[0,2,6,8], 5:[0,2,4,6,8], 6:[0,2,3,5,6,8] };
 const reduced = () => window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
@@ -872,6 +884,12 @@ let timer = { left:30, endAt:null, running:false, iv:null, done:false };
 let dice = { vals:[], rolling:false, iv:null, last:[] };
 let pick = { who:null, spinning:false, iv:null, order:null };
 let audio = null;
+
+/* ---- kiezer 2 (vingers op het scherm) ---- */
+const P2_MAX = 5;
+const P2_WAIT_MS = 2500;
+const P2_COLORS = ["#3E8E5A","#B8860B","#2F6FBF","#C8442F","#7A4FB0"];
+let pick2 = { touches:{}, order:[], phase:"idle", winnerId:null, waitTimeout:null, stage:null };
 
 function mmss(sec){
   const s = Math.max(0, Math.ceil(sec));
@@ -903,11 +921,13 @@ function renderTools(){
     '<div class="subnav">' +
       Object.keys(TOOLS).map(k => '<button data-act="tool-sub" data-sub="' + k + '" class="' + (sub === k ? "is-on" : "") + '">' + ico(TOOLICON[k], 18) + '<span>' + TOOLS[k] + '</span></button>').join("") +
     '</div>' +
-    '<div class="tool-card" id="tool-stage">' + (sub === "timer" ? timerHTML() : sub === "dice" ? diceHTML() : pickHTML()) + '</div>' +
+    '<div class="tool-card" id="tool-stage">' + (sub === "timer" ? timerHTML() : sub === "dice" ? diceHTML() : sub === "pick2" ? pick2HTML() : pickHTML()) + '</div>' +
     '<p class="tool-hint">' + (sub === "timer"
       ? "Tik op de tijd om een eigen duur in te stellen. Hij loopt door als je naar een ander tabblad gaat."
       : sub === "dice" ? "Kies hoeveel stenen je gooit. De worp klinkt hetzelfde als de echte, maar rolt nooit van de tafel."
+      : sub === "pick2" ? "Leg tot " + P2_MAX + " vingers tegelijk op het vak. Zodra er even niemand meer bijkomt, kiest de app er één uit."
       : "Kiest iemand uit je spelerslijst, of maakt in één tik een willekeurige beurtvolgorde.") + '</p>';
+  if(sub === "pick2") pick2Setup();
 }
 
 /* ---- timer ---- */
@@ -1067,6 +1087,114 @@ function pickOrder(){
   renderTools();
 }
 
+/* ---- kiezer 2 (vingers op het scherm) ---- */
+function pick2HTML(){
+  return '<div class="p2-stage" id="p2-stage"><div class="p2-empty" id="p2-empty">Zet hier vingers neer</div></div>' +
+    '<div class="btnrow" style="grid-template-columns:1fr">' +
+      '<button class="btn-sec" data-act="p2-reset">' + ico("reset", 19) + '<span>Opnieuw</span></button>' +
+    '</div>';
+}
+function pick2Clamp(v, max){ return Math.max(37, Math.min(max - 37, v)); }
+function pick2FingerEl(id){
+  const el = document.createElement("div");
+  el.className = "p2-finger";
+  el.id = "p2-f-" + id;
+  el.style.setProperty("--fc", pick2.touches[id].color);
+  el.innerHTML = '<div class="p2-ring"></div><span>' + pick2.touches[id].order + '</span>';
+  return el;
+}
+function pick2Position(el, x, y){
+  el.style.transform = "translate(" + x + "px, " + y + "px)";
+}
+function pick2Reset(){
+  clearTimeout(pick2.waitTimeout);
+  pick2 = { touches:{}, order:[], phase:"idle", winnerId:null, waitTimeout:null, stage:pick2.stage };
+  const empty = document.getElementById("p2-empty");
+  const stage = document.getElementById("p2-stage");
+  if(stage) stage.querySelectorAll(".p2-finger").forEach(n => n.remove());
+  if(empty) empty.style.display = "grid";
+}
+function pick2ArmTimeout(){
+  clearTimeout(pick2.waitTimeout);
+  pick2.waitTimeout = setTimeout(pick2Choose, P2_WAIT_MS);
+}
+function pick2Choose(){
+  const ids = pick2.order.slice();
+  if(!ids.length){ pick2.phase = "idle"; return; }
+  pick2.phase = "done";
+  pick2.winnerId = ids[Math.floor(Math.random() * ids.length)];
+  ids.forEach(id => {
+    const el = document.getElementById("p2-f-" + id);
+    if(!el) return;
+    el.classList.toggle("is-winner", id === pick2.winnerId);
+    el.classList.toggle("is-out", id !== pick2.winnerId);
+  });
+  if(navigator.vibrate) navigator.vibrate([40,60,40,60,150]);
+}
+function pick2Setup(){
+  const stage = document.getElementById("p2-stage");
+  if(!stage) return;
+  pick2.stage = stage;
+
+  const onStart = ev => {
+    ev.preventDefault();
+    for(const t of ev.changedTouches){
+      const id = String(t.identifier);
+      if(pick2.phase === "done") pick2Reset();
+      if(pick2.order.length >= P2_MAX) continue;
+      const rect = stage.getBoundingClientRect();
+      const x = pick2Clamp(t.clientX - rect.left, rect.width);
+      const y = pick2Clamp(t.clientY - rect.top, rect.height || 360);
+      pick2.order.push(id);
+      pick2.touches[id] = { x, y, order: pick2.order.length, color: P2_COLORS[pick2.order.length - 1] };
+      const empty = document.getElementById("p2-empty");
+      if(empty) empty.style.display = "none";
+      const el = pick2FingerEl(id);
+      pick2Position(el, x, y);
+      stage.appendChild(el);
+      pick2.phase = "waiting";
+      pick2ArmTimeout();
+    }
+  };
+  const onMove = ev => {
+    ev.preventDefault();
+    if(pick2.phase === "done") return;
+    for(const t of ev.changedTouches){
+      const id = String(t.identifier);
+      const fin = pick2.touches[id];
+      if(!fin) continue;
+      const rect = stage.getBoundingClientRect();
+      fin.x = pick2Clamp(t.clientX - rect.left, rect.width);
+      fin.y = pick2Clamp(t.clientY - rect.top, rect.height || 360);
+      const el = document.getElementById("p2-f-" + id);
+      if(el) pick2Position(el, fin.x, fin.y);
+    }
+  };
+  const onEnd = ev => {
+    ev.preventDefault();
+    if(pick2.phase === "done") return;
+    for(const t of ev.changedTouches){
+      const id = String(t.identifier);
+      if(!pick2.touches[id]) continue;
+      delete pick2.touches[id];
+      pick2.order = pick2.order.filter(x => x !== id);
+      const el = document.getElementById("p2-f-" + id);
+      if(el) el.remove();
+    }
+    if(!pick2.order.length){
+      clearTimeout(pick2.waitTimeout);
+      pick2.phase = "idle";
+      const empty = document.getElementById("p2-empty");
+      if(empty) empty.style.display = "grid";
+    }
+  };
+
+  stage.ontouchstart = onStart;
+  stage.ontouchmove = onMove;
+  stage.ontouchend = onEnd;
+  stage.ontouchcancel = onEnd;
+}
+
 /* ============================ events ============================ */
 document.addEventListener("click", ev => {
   if(ev.target.closest("[data-close]")){ closeAllSheets(); return; }
@@ -1087,6 +1215,7 @@ document.addEventListener("click", ev => {
   switch(act){
     case "tab":
       if(state.tab === "games" && btn.dataset.tab === "games") state.openGameId = null;
+      if(state.tab === "tools" && state.tools.sub === "pick2") pick2Reset();
       state.tab = btn.dataset.tab; render(); window.scrollTo(0,0); break;
 
     /* spellen */
@@ -1154,7 +1283,10 @@ document.addEventListener("click", ev => {
     }
 
     /* tools */
-    case "tool-sub": state.tools.sub = btn.dataset.sub; render(); break;
+    case "tool-sub":
+      if(state.tools.sub === "pick2" && btn.dataset.sub !== "pick2") pick2Reset();
+      state.tools.sub = btn.dataset.sub; render(); break;
+    case "p2-reset": pick2Reset(); break;
     case "t-preset": timerSet(Number(btn.dataset.secs)); break;
     case "t-start": timerStart(); break;
     case "t-reset":

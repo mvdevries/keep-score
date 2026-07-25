@@ -5,6 +5,14 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1">
 <meta name="theme-color" content="#F2F5F3">
 <title>Keep Score</title>
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icons/favicon-32.png" sizes="32x32" type="image/png">
+<link rel="icon" href="icons/icon-192.png" sizes="192x192" type="image/png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Keep Score">
+<meta name="mobile-web-app-capable" content="yes">
 <style>
   :root{
     --bg:#F2F5F3;
@@ -198,18 +206,8 @@
   .die.rolling{animation:tumble .28s linear infinite;}
   .bigtotal{font-size:40px; font-weight:800; font-variant-numeric:tabular-nums; letter-spacing:-1.5px;}
 
-  .pickstage{min-height:200px; display:grid; place-content:center; gap:12px; padding:14px 0;}
-  .pickstage .avatar{width:96px; height:96px; font-size:38px; margin:0 auto;}
-  .pickstage .who{font-size:26px; font-weight:800; letter-spacing:-.5px;}
-  .pickstage .ph{width:96px; height:96px; border-radius:999px; border:3px dashed #D3DBD6; display:grid; place-items:center; font-size:38px; color:#C3CFC8; margin:0 auto;}
-  @keyframes pop{0%{transform:scale(.6); opacity:0}60%{transform:scale(1.08)}100%{transform:scale(1); opacity:1}}
-  .pickstage.landed{animation:pop .4s ease-out;}
-  .pickchip{display:flex; align-items:center; gap:8px; border:2px solid var(--line); border-radius:999px; padding:6px 14px 6px 6px; font-weight:700; font-size:15px; background:#fff; color:var(--ink-soft);}
-  .pickchip .avatar{width:30px; height:30px; font-size:13px; filter:grayscale(1); opacity:.5;}
-  .pickchip.is-on{border-color:var(--green); color:var(--ink);}
-  .pickchip.is-on .avatar{filter:none; opacity:1;}
-
-  .p2-stage{position:relative; min-height:360px; border-radius:18px; background:var(--bg); border:2px dashed var(--line); touch-action:none; user-select:none; overflow:hidden;}
+  .tool-card-fill{padding:10px;}
+  .p2-stage{position:relative; min-height:min(64vh, 640px); height:100%; border-radius:18px; background:var(--bg); border:2px dashed var(--line); touch-action:none; user-select:none; overflow:hidden;}
   .p2-empty{position:absolute; inset:0; display:grid; place-content:center; padding:0 24px; text-align:center; color:var(--ink-soft); font-weight:600; font-size:15px;}
   /* .p2-finger is alleen voor positionering (translate) zodat de scale-animatie van .p2-circle
      die translate nooit kan overschrijven (transform-animaties vervangen het hele transform). */
@@ -224,7 +222,7 @@
   .p2-finger.is-out .p2-ring{animation:none; opacity:0;}
   @keyframes p2spin{to{transform:rotate(360deg);}}
   @keyframes p2pulse{from{transform:scale(1);}to{transform:scale(1.1);}}
-  @media (prefers-reduced-motion:reduce){ .die.rolling,.ring.done,.pickstage.landed,.p2-finger .p2-ring,.p2-finger.is-winner .p2-circle{animation:none;} }
+  @media (prefers-reduced-motion:reduce){ .die.rolling,.ring.done,.p2-finger .p2-ring,.p2-finger.is-winner .p2-circle{animation:none;} }
 
   #toast{position:fixed; left:50%; bottom:106px; transform:translate(-50%,20px); z-index:60; background:#12212B; color:#fff; font-size:15px; font-weight:600; padding:12px 18px; border-radius:14px; opacity:0; pointer-events:none; transition:all .22s ease; max-width:90%; text-align:center;}
   #toast.is-on{opacity:1; transform:translate(-50%,0);}
@@ -313,7 +311,6 @@ const ICONS = {
   plus: '<path d="M5 12h14"/><path d="M12 5v14"/>',
   dices: '<rect width="12" height="12" x="2" y="10" rx="2" ry="2"/><path d="m17.92 14 3.5-3.5a2.24 2.24 0 0 0 0-3l-5-4.92a2.24 2.24 0 0 0-3 0L10 6"/><path d="M6 18h.01"/><path d="M10 14h.01"/><path d="M15 6h.01"/><path d="M18 9h.01"/>',
   timer: '<line x1="10" x2="14" y1="2" y2="2"/><line x1="12" x2="15" y1="14" y2="11"/><circle cx="12" cy="14" r="8"/>',
-  shuffle: '<path d="m18 14 4 4-4 4"/><path d="m18 2 4 4-4 4"/><path d="M2 18h1.973a4 4 0 0 0 3.3-1.7l5.454-8.6a4 4 0 0 1 3.3-1.7H22"/><path d="M2 6h1.972a4 4 0 0 1 3.6 2.2"/><path d="M22 18h-6.041a4 4 0 0 1-3.3-1.8l-.359-.45"/>',
   play: '<path d="M5 5a2 2 0 0 1 3.008-1.728l11.997 6.998a2 2 0 0 1 .003 3.458l-12 7A2 2 0 0 1 5 19z"/>',
   pause: '<rect x="14" y="3" width="5" height="18" rx="1"/><rect x="5" y="3" width="5" height="18" rx="1"/>',
   reset: '<path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/>',
@@ -332,7 +329,7 @@ const PALETTE = ["#2E6B3E","#3F8F52","#57B26B","#7CC85C","#A3CE3E","#1E5033","#5
 const SORTS = { score:"Hoogste score", low:"Laagste score", name:"Naam (A-Z)", added:"Volgorde toegevoegd" };
 
 let state = { players:[], games:[], templates:[], history:[], seeded:false, tab:"games", openGameId:null,
-               tools:{ sub:"timer", secs:30, dice:2, off:[] } };
+               tools:{ sub:"timer", secs:30, dice:2 } };
 
 const uid = () => Math.random().toString(36).slice(2,9);
 const initial = n => (n.trim()[0] || "?").toUpperCase();
@@ -880,14 +877,13 @@ function finishSheet(g){
 
 
 /* ============================ tools ============================ */
-const TOOLS = { timer:"Timer", dice:"Dobbelen", pick:"Kiezer", pick2:"Kiezer 2" };
-const TOOLICON = { timer:"timer", dice:"dices", pick:"shuffle", pick2:"touch" };
+const TOOLS = { timer:"Timer", dice:"Dobbelen", pick:"Kiezer" };
+const TOOLICON = { timer:"timer", dice:"dices", pick:"touch" };
 const PIPS = { 1:[4], 2:[0,8], 3:[0,4,8], 4:[0,2,6,8], 5:[0,2,4,6,8], 6:[0,2,3,5,6,8] };
 const reduced = () => window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
 let timer = { left:30, endAt:null, running:false, iv:null, done:false };
 let dice = { vals:[], rolling:false, iv:null, last:[] };
-let pick = { who:null, spinning:false, iv:null, order:null };
 let audio = null;
 
 /* ---- kiezer 2 (vingers op het scherm) ---- */
@@ -926,13 +922,11 @@ function renderTools(){
     '<div class="subnav">' +
       Object.keys(TOOLS).map(k => '<button data-act="tool-sub" data-sub="' + k + '" class="' + (sub === k ? "is-on" : "") + '">' + ico(TOOLICON[k], 18) + '<span>' + TOOLS[k] + '</span></button>').join("") +
     '</div>' +
-    '<div class="tool-card" id="tool-stage">' + (sub === "timer" ? timerHTML() : sub === "dice" ? diceHTML() : sub === "pick2" ? pick2HTML() : pickHTML()) + '</div>' +
-    '<p class="tool-hint">' + (sub === "timer"
+    '<div class="tool-card' + (sub === "pick" ? " tool-card-fill" : "") + '" id="tool-stage">' + (sub === "timer" ? timerHTML() : sub === "dice" ? diceHTML() : pick2HTML()) + '</div>' +
+    (sub === "pick" ? "" : '<p class="tool-hint">' + (sub === "timer"
       ? "Tik op de tijd om een eigen duur in te stellen. Hij loopt door als je naar een ander tabblad gaat."
-      : sub === "dice" ? "Kies hoeveel stenen je gooit. De worp klinkt hetzelfde als de echte, maar rolt nooit van de tafel."
-      : sub === "pick2" ? "Leg tot " + P2_MAX + " vingers tegelijk op het vak. Zodra er even niemand meer bijkomt, kiest de app er één uit."
-      : "Kiest iemand uit je spelerslijst, of maakt in één tik een willekeurige beurtvolgorde.") + '</p>';
-  if(sub === "pick2") pick2Setup();
+      : "Kies hoeveel stenen je gooit. De worp klinkt hetzelfde als de echte, maar rolt nooit van de tafel.") + '</p>');
+  if(sub === "pick") pick2Setup();
 }
 
 /* ---- timer ---- */
@@ -1043,61 +1037,9 @@ function roll(){
   setTimeout(() => { clearInterval(dice.iv); dice.iv = null; land(); }, 900);
 }
 
-/* ---- kiezer ---- */
-function pickPool(){ return state.players.filter(p => state.tools.off.indexOf(p.id) < 0); }
-function pickHTML(){
-  if(!state.players.length){
-    return '<p style="font-weight:700; font-size:19px; margin:14px 0 6px">Nog geen spelers</p>' +
-      '<p style="color:var(--ink-soft); margin:0 0 18px">Voeg ze toe op het tabblad Spelers, dan kan de kiezer aan het werk.</p>';
-  }
-  const pool = pickPool();
-  const stage = pick.order
-    ? pick.order.map((p,i) => '<div class="stand"><span class="pos">' + (i+1) + '</span>' + avatar(p,"sm") + '<span class="nm" style="margin-left:4px">' + esc(p.name) + '</span></div>').join("")
-    : pick.who
-      ? avatar(pick.who) + '<div class="who">' + esc(pick.who.name) + '</div>' +
-        '<div style="color:var(--ink-soft); font-weight:600">' + (pick.spinning ? "aan het kiezen…" : "is gekozen") + '</div>'
-      : '<div class="ph">?</div><div style="color:var(--ink-soft); font-weight:600">Kies iemand uit ' + plural(pool.length,"speler","spelers") + '</div>';
-  return '<div class="chiprow">' +
-      state.players.map(p => '<button class="pickchip ' + (state.tools.off.indexOf(p.id) < 0 ? "is-on" : "") + '" data-act="p-toggle" data-pid="' + p.id + '">' + avatar(p,"sm") + esc(p.name) + '</button>').join("") +
-    '</div>' +
-    '<div class="pickstage' + (pick.who && !pick.spinning ? " landed" : "") + '">' + stage + '</div>' +
-    '<button class="btn-primary" data-act="p-pick"' + (pick.spinning || pool.length < 1 ? " disabled" : "") + '>Kies iemand</button>' +
-    '<button class="btn-sec" style="width:100%; margin-top:10px" data-act="p-order"' + (pick.spinning || pool.length < 2 ? " disabled" : "") + '>' + ico("shuffle", 19) + '<span>Willekeurige beurtvolgorde</span></button>';
-}
-function pickSomeone(){
-  const pool = pickPool();
-  if(!pool.length){ toast("Zet minstens één speler aan"); return; }
-  pick.order = null;
-  const final = pool[Math.floor(Math.random() * pool.length)];
-  if(reduced() || pool.length === 1){ pick.who = final; pick.spinning = false; renderTools(); return; }
-  pick.spinning = true;
-  clearInterval(pick.iv);
-  pick.iv = setInterval(() => {
-    pick.who = pool[Math.floor(Math.random() * pool.length)];
-    renderTools();
-  }, 110);
-  setTimeout(() => {
-    clearInterval(pick.iv); pick.iv = null;
-    pick.who = final; pick.spinning = false; renderTools();
-    if(navigator.vibrate) navigator.vibrate(60);
-  }, 1200);
-}
-function pickOrder(){
-  const pool = pickPool().slice();
-  for(let i = pool.length - 1; i > 0; i--){
-    const j = Math.floor(Math.random() * (i + 1));
-    const t = pool[i]; pool[i] = pool[j]; pool[j] = t;
-  }
-  pick.who = null; pick.order = pool;
-  renderTools();
-}
-
-/* ---- kiezer 2 (vingers op het scherm) ---- */
+/* ---- kiezer (vingers op het scherm) ---- */
 function pick2HTML(){
-  return '<div class="p2-stage" id="p2-stage"><div class="p2-empty" id="p2-empty">Zet hier vingers neer</div></div>' +
-    '<div class="btnrow" style="grid-template-columns:1fr">' +
-      '<button class="btn-sec" data-act="p2-reset">' + ico("reset", 19) + '<span>Opnieuw</span></button>' +
-    '</div>';
+  return '<div class="p2-stage" id="p2-stage"><div class="p2-empty" id="p2-empty">Zet hier vingers neer</div></div>';
 }
 function pick2Clamp(v, max){ return Math.max(37, Math.min(max - 37, v)); }
 function pick2FingerEl(id){
@@ -1223,7 +1165,7 @@ document.addEventListener("click", ev => {
   switch(act){
     case "tab":
       if(state.tab === "games" && btn.dataset.tab === "games") state.openGameId = null;
-      if(state.tab === "tools" && state.tools.sub === "pick2") pick2Reset();
+      if(state.tab === "tools" && state.tools.sub === "pick") pick2Reset();
       state.tab = btn.dataset.tab; render(); window.scrollTo(0,0); break;
 
     /* spellen */
@@ -1292,9 +1234,8 @@ document.addEventListener("click", ev => {
 
     /* tools */
     case "tool-sub":
-      if(state.tools.sub === "pick2" && btn.dataset.sub !== "pick2") pick2Reset();
+      if(state.tools.sub === "pick" && btn.dataset.sub !== "pick") pick2Reset();
       state.tools.sub = btn.dataset.sub; render(); break;
-    case "p2-reset": pick2Reset(); break;
     case "t-preset": timerSet(Number(btn.dataset.secs)); break;
     case "t-start": timerStart(); break;
     case "t-reset":
@@ -1320,13 +1261,6 @@ document.addEventListener("click", ev => {
     }
     case "d-count": state.tools.dice = Number(btn.dataset.n); dice.vals = []; render(); break;
     case "d-roll": roll(); break;
-    case "p-toggle": {
-      const off = state.tools.off, i = off.indexOf(pid);
-      i < 0 ? off.push(pid) : off.splice(i,1);
-      pick.who = null; pick.order = null; render(); break;
-    }
-    case "p-pick": pickSomeone(); break;
-    case "p-order": pickOrder(); break;
 
     /* setup */
     case "setup-tpl": setup.tid = tid || null; renderSetup(); break;

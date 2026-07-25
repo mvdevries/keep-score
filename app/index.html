@@ -211,15 +211,20 @@
 
   .p2-stage{position:relative; min-height:360px; border-radius:18px; background:var(--bg); border:2px dashed var(--line); touch-action:none; user-select:none; overflow:hidden;}
   .p2-empty{position:absolute; inset:0; display:grid; place-content:center; padding:0 24px; text-align:center; color:var(--ink-soft); font-weight:600; font-size:15px;}
-  .p2-finger{position:absolute; top:0; left:0; width:74px; height:74px; margin:-37px 0 0 -37px; border-radius:999px; display:grid; place-items:center; color:#fff; font-weight:800; font-size:24px; background:var(--fc); box-shadow:0 4px 14px rgba(18,33,43,.18); transition:background-color .25s, opacity .25s, box-shadow .25s;}
+  /* .p2-finger is alleen voor positionering (translate) zodat de scale-animatie van .p2-circle
+     die translate nooit kan overschrijven (transform-animaties vervangen het hele transform). */
+  .p2-finger{position:absolute; top:0; left:0; width:92px; height:92px; margin:-46px 0 0 -46px;}
   .p2-finger .p2-ring{position:absolute; inset:-9px; border-radius:999px; border:4px solid transparent; border-top-color:var(--fc); border-right-color:var(--fc); animation:p2spin .85s linear infinite;}
-  .p2-finger.is-winner{z-index:5; animation:p2pulse .7s ease-in-out infinite alternate; box-shadow:0 0 0 7px rgba(62,142,90,.22), 0 4px 14px rgba(18,33,43,.18);}
+  .p2-finger .p2-circle{position:absolute; inset:0; border-radius:999px; display:grid; place-items:center; color:#fff; font-weight:800; font-size:28px; background:var(--fc); box-shadow:0 4px 14px rgba(18,33,43,.18); transition:background-color .25s, opacity .25s, box-shadow .25s;}
+  .p2-finger.is-winner{z-index:5;}
+  .p2-finger.is-winner .p2-circle{animation:p2pulse .7s ease-in-out infinite alternate; box-shadow:0 0 0 7px rgba(62,142,90,.22), 0 4px 14px rgba(18,33,43,.18);}
   .p2-finger.is-winner .p2-ring{animation:none; border-color:var(--fc); opacity:.4;}
-  .p2-finger.is-out{z-index:1; background:#B9C2BC; opacity:.5;}
+  .p2-finger.is-out{z-index:1;}
+  .p2-finger.is-out .p2-circle{background:#B9C2BC; opacity:.5;}
   .p2-finger.is-out .p2-ring{animation:none; opacity:0;}
   @keyframes p2spin{to{transform:rotate(360deg);}}
   @keyframes p2pulse{from{transform:scale(1);}to{transform:scale(1.1);}}
-  @media (prefers-reduced-motion:reduce){ .die.rolling,.ring.done,.pickstage.landed,.p2-finger .p2-ring,.p2-finger.is-winner{animation:none;} }
+  @media (prefers-reduced-motion:reduce){ .die.rolling,.ring.done,.pickstage.landed,.p2-finger .p2-ring,.p2-finger.is-winner .p2-circle{animation:none;} }
 
   #toast{position:fixed; left:50%; bottom:106px; transform:translate(-50%,20px); z-index:60; background:#12212B; color:#fff; font-size:15px; font-weight:600; padding:12px 18px; border-radius:14px; opacity:0; pointer-events:none; transition:all .22s ease; max-width:90%; text-align:center;}
   #toast.is-on{opacity:1; transform:translate(-50%,0);}
@@ -1100,7 +1105,7 @@ function pick2FingerEl(id){
   el.className = "p2-finger";
   el.id = "p2-f-" + id;
   el.style.setProperty("--fc", pick2.touches[id].color);
-  el.innerHTML = '<div class="p2-ring"></div><span>' + pick2.touches[id].order + '</span>';
+  el.innerHTML = '<div class="p2-ring"></div><div class="p2-circle">' + pick2.touches[id].order + '</div>';
   return el;
 }
 function pick2Position(el, x, y){
@@ -1138,7 +1143,8 @@ function pick2Setup(){
 
   const onStart = ev => {
     ev.preventDefault();
-    for(const t of ev.changedTouches){
+    for(let i = 0; i < ev.changedTouches.length; i++){
+      const t = ev.changedTouches[i];
       const id = String(t.identifier);
       if(pick2.phase === "done") pick2Reset();
       if(pick2.order.length >= P2_MAX) continue;
@@ -1159,7 +1165,8 @@ function pick2Setup(){
   const onMove = ev => {
     ev.preventDefault();
     if(pick2.phase === "done") return;
-    for(const t of ev.changedTouches){
+    for(let i = 0; i < ev.changedTouches.length; i++){
+      const t = ev.changedTouches[i];
       const id = String(t.identifier);
       const fin = pick2.touches[id];
       if(!fin) continue;
@@ -1173,7 +1180,8 @@ function pick2Setup(){
   const onEnd = ev => {
     ev.preventDefault();
     if(pick2.phase === "done") return;
-    for(const t of ev.changedTouches){
+    for(let i = 0; i < ev.changedTouches.length; i++){
+      const t = ev.changedTouches[i];
       const id = String(t.identifier);
       if(!pick2.touches[id]) continue;
       delete pick2.touches[id];

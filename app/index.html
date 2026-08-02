@@ -250,6 +250,7 @@
   .chipbtn.is-on{background:var(--solid-dark); border-color:var(--solid-dark); color:#fff;}
   .circlebtn{width:46px; height:46px; border-radius:999px; border:2px solid var(--line); font-weight:700; color:var(--ink-soft); background:var(--card);}
   .circlebtn.is-on{background:var(--solid-dark); border-color:var(--solid-dark); color:#fff;}
+  .circlebtn[disabled]{opacity:.4;}
 
   .ring{position:relative; width:220px; height:220px; margin:18px auto 6px;}
   .ring svg{transform:rotate(-90deg);}
@@ -1127,7 +1128,7 @@ function diceHTML(){
   const n = state.tools.dice;
   const som = dice.vals.reduce((a,b) => a + b, 0);
   return '<div class="chiprow">' +
-      [1,2,3,4,5,6].map(i => '<button class="circlebtn ' + (n === i ? "is-on" : "") + '" data-act="d-count" data-n="' + i + '">' + i + '</button>').join("") +
+      [1,2,3,4,5,6].map(i => '<button class="circlebtn ' + (n === i ? "is-on" : "") + '" data-act="d-count" data-n="' + i + '"' + (dice.rolling ? " disabled" : "") + '>' + i + '</button>').join("") +
     '</div>' +
     '<div class="dicebox">' + (dice.vals.length
       ? dice.vals.map(v => dieHTML(v, dice.rolling)).join("")

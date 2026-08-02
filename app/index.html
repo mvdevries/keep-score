@@ -1193,9 +1193,16 @@ function pick2Choose(){
   if(!ids.length){ pick2.phase = "idle"; return; }
   pick2.phase = "done";
   pick2.winnerId = ids[Math.floor(Math.random() * ids.length)];
-  ids.forEach(id => {
+  const rest = ids.filter(id => id !== pick2.winnerId);
+  for(let i = rest.length - 1; i > 0; i--){
+    const j = Math.floor(Math.random() * (i + 1));
+    const tmp = rest[i]; rest[i] = rest[j]; rest[j] = tmp;
+  }
+  [pick2.winnerId].concat(rest).forEach((id, i) => {
     const el = document.getElementById("p2-f-" + id);
     if(!el) return;
+    const cirkel = el.querySelector(".p2-circle");
+    if(cirkel) cirkel.textContent = i + 1;
     el.classList.toggle("is-winner", id === pick2.winnerId);
     el.classList.toggle("is-out", id !== pick2.winnerId);
   });

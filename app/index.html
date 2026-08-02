@@ -372,10 +372,13 @@ function ico(name, size, stroke){
 }
 
 /* ============================ data ============================ */
-const PALETTE = ["#2E6B3E","#3F8F52","#57B26B","#7CC85C","#A3CE3E","#1E5033","#5FB89A","#86C258"];
+const PALETTE = ["#3F8F52","#C8442F","#2F6FBF","#B8860B","#7A4FB0","#1F7A6B",
+                 "#C2622D","#B33F7A","#4A56A6","#6E8C1F","#8A5A3C","#2E6B3E"];
+const PALETTE_OUD = ["#2E6B3E","#3F8F52","#57B26B","#7CC85C","#A3CE3E","#1E5033","#5FB89A","#86C258"];
+const PALETTE_V = 2;
 const SORTS = { score:"Hoogste score", low:"Laagste score", name:"Naam (A-Z)", added:"Volgorde toegevoegd" };
 
-let state = { players:[], games:[], templates:[], history:[], seeded:false, tab:"games", openGameId:null, gamesMode:"current",
+let state = { players:[], games:[], templates:[], history:[], seeded:false, paletteV:0, tab:"games", openGameId:null, gamesMode:"current",
                tools:{ sub:"timer", secs:30, dice:2 } };
 
 const uid = () => Math.random().toString(36).slice(2,9);
@@ -417,7 +420,7 @@ const store = (() => {
 })();
 
 function snapshot(){
-  return { v:3, seeded:state.seeded, tools:state.tools, players:state.players, games:state.games, templates:state.templates, history:state.history };
+  return { v:3, seeded:state.seeded, paletteV:state.paletteV, tools:state.tools, players:state.players, games:state.games, templates:state.templates, history:state.history };
 }
 let saveTimer = null;
 function save(){
@@ -430,6 +433,7 @@ function applyData(d){
   state.templates = d.templates || [];
   state.history = d.history || [];
   state.seeded = !!d.seeded;
+  state.paletteV = d.paletteV || 0;
   if(d.tools) state.tools = Object.assign(state.tools, d.tools);
   if(d.game){ /* oude versie met precies één spel */
     d.game.winScore = 0; d.game.winMode = "high"; d.game.levels = true;
@@ -1393,6 +1397,12 @@ document.getElementById("score-toggle").addEventListener("click", () => {
       { id:uid(), name:"Phase 10", winScore:0, winMode:"low", levels:true },
       { id:uid(), name:"Pesten", winScore:100, winMode:"low", levels:false }
     ]);
+  }
+  if(state.paletteV < PALETTE_V){
+    state.players.forEach((p,i) => {
+      if(PALETTE_OUD.indexOf(p.color) > -1) p.color = PALETTE[i % PALETTE.length];
+    });
+    state.paletteV = PALETTE_V;
   }
   timer.left = state.tools.secs;
   render();

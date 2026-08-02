@@ -124,6 +124,7 @@
   .bar{display:block; height:5px; border-radius:99px; background:var(--surface2); margin-top:9px; overflow:hidden;}
   .bar i{display:block; height:100%; background:var(--green); border-radius:99px; transition:width .35s ease;}
   .bar i.full{background:var(--gold);}
+  .bar.spent{background:var(--red);}
 
   .empty{text-align:center; padding:46px 20px;}
   .empty .mark{font-size:40px; margin-bottom:10px;}
@@ -576,14 +577,16 @@ function renderGameDetail(){
       const p = findPlayer(e.pid), t = total(e);
       const lead = !g.won && played && t === front && st.filter(s => s.score === front).length < g.entrants.length;
       const isWinner = g.won && g.won.pids.indexOf(e.pid) > -1;
-      const pct = g.winScore ? Math.max(0, Math.min(100, Math.round(t / g.winScore * 100))) : 0;
+      const raw = g.winScore ? Math.max(0, Math.min(100, Math.round(t / g.winScore * 100))) : 0;
+      const pct = g.winMode === "low" ? 100 - raw : raw;
+      const spent = g.winMode === "low" && raw >= 100;
       return '<button class="card ' + (isWinner ? "won" : "") + '" data-act="score" data-pid="' + e.pid + '">' +
         avatar(p) +
         '<span class="pc-info">' +
           '<span class="pc-name"><span>' + esc(p.name) + '</span>' +
             (isWinner ? '<em class="chip gold">winnaar</em>' : lead ? '<em class="chip">leidt</em>' : "") + '</span>' +
           '<span class="pc-meta">' + (g.levels ? "Level " + e.level + " · " : "") + plural(e.scores.length,"ronde","rondes") + '</span>' +
-          (g.winScore ? '<span class="bar"><i class="' + (pct >= 100 ? "full" : "") + '" style="width:' + pct + '%"></i></span>' : "") +
+          (g.winScore ? '<span class="bar' + (spent ? " spent" : "") + '"><i class="' + (g.winMode !== "low" && raw >= 100 ? "full" : "") + '" style="width:' + pct + '%"></i></span>' : "") +
         '</span>' +
         '<span class="pc-score">' + t + '</span>' +
       '</button>';

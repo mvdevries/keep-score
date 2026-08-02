@@ -935,8 +935,9 @@ function saveScore(){
 }
 
 /* ============================ sheets ============================ */
-function actionSheet(html, noCancel){
-  document.getElementById("action-body").innerHTML = html + (noCancel ? "" : '<button class="action" data-close>Annuleer</button>');
+function actionSheet(html, verplicht){
+  document.getElementById("action-body").innerHTML = html + (verplicht ? "" : '<button class="action" data-close>Annuleer</button>');
+  document.getElementById("sheet-action").classList.toggle("is-locked", !!verplicht);
   openSheet("sheet-action");
 }
 function winSheet(g){
@@ -1270,7 +1271,11 @@ function pick2Setup(){
 /* ============================ events ============================ */
 document.addEventListener("click", ev => {
   const sluit = ev.target.closest("[data-close]");
-  if(sluit){ sluit.dataset.close ? closeSheet(sluit.dataset.close) : closeAllSheets(); return; }
+  if(sluit){
+    if(sluit.classList.contains("scrim") && sluit.closest(".sheet.is-locked")) return;
+    sluit.dataset.close ? closeSheet(sluit.dataset.close) : closeAllSheets();
+    return;
+  }
 
   const key = ev.target.closest("[data-key]");
   if(key){ keyPress(key.dataset.key); return; }
@@ -1461,7 +1466,10 @@ document.addEventListener("keydown", ev => {
     else ev.target.blur();
     return;
   }
-  if(ev.key === "Escape"){ closeAllSheets(); return; }
+  if(ev.key === "Escape"){
+    if(!document.querySelector(".sheet.is-locked.is-open")) closeAllSheets();
+    return;
+  }
   const scoreOpen = document.getElementById("sheet-score").classList.contains("is-open");
   if(scoreOpen && sc.view === "keypad" && !/^(INPUT|TEXTAREA)$/.test(ev.target.tagName)){
     if(/^[0-9]$/.test(ev.key)) keyPress(ev.key);

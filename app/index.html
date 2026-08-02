@@ -780,10 +780,10 @@ function keyPress(k){
     sc.expr = v === null ? "" : String(v);
   }
   else if(k === "+" || k === "-" || k === "*"){
-    if(!sc.expr) { if(k === "-") sc.expr = "-"; }
+    if(!sc.expr) { if(k !== "*") sc.expr = k; }
     else if(/[+\-*]$/.test(sc.expr)){
       const rest = sc.expr.slice(0, -1);
-      if(!rest && k !== "-") return;
+      if(!rest && k === "*") return;
       sc.expr = rest + k;
     }
     else sc.expr += k;
@@ -826,7 +826,7 @@ function renderScore(){
 
   const som = calc(sc.expr);
   const heeftSom = /[+\-*]/.test(sc.expr.slice(1));
-  const losseMin = sc.expr === "-";
+  const losseOp = sc.expr === "-" || sc.expr === "+";
   const next = som === null ? null : total(e) + som;
   const hits = g.winScore && next !== null && next >= g.winScore;
   body.innerHTML =
@@ -841,13 +841,13 @@ function renderScore(){
     '</div>' +
     '<div class="display">' +
       '<div class="sum">' + (heeftSom ? esc(exprPretty(sc.expr)) : "&nbsp;") + '</div>' +
-      '<div class="val ' + (som === null && !losseMin ? "placeholder" : "") + '">' +
-        (som !== null ? som : losseMin ? "&minus;" : "&mdash;") + '</div>' +
+      '<div class="val ' + (som === null && !losseOp ? "placeholder" : "") + '">' +
+        (som !== null ? som : losseOp ? (sc.expr === "-" ? "&minus;" : "+") : "&mdash;") + '</div>' +
       '<div class="lbl">Punten' + (heeftSom ? (sc.expr.indexOf("*") > -1 ? " uitgerekend" : " bij elkaar") : "") + '</div>' +
       '<div class="hint">' + (som !== null
         ? "Totaal wordt " + next + (hits ? " <b>· winscore gehaald</b>" : (g.winScore ? " van " + g.winScore : ""))
-        : losseMin
-          ? "Tik nu het aantal punten dat eraf gaat"
+        : losseOp
+          ? "Tik nu het aantal punten dat er" + (sc.expr === "-" ? "af gaat" : "bij komt")
           : "Totaal nu " + total(e) + " · ronde " + (e.scores.length + 1) + " · tik +, &minus; of &times; om te rekenen") + '</div>' +
     '</div>' +
     '<button class="btn-primary" data-act="sc-save"' + (som === null ? " disabled" : "") + '>' +

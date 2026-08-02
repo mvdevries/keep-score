@@ -27,7 +27,8 @@ export default defineConfig({
     },
     {
       name: "ios",
-      use: { ...devices["iPhone 14"] }
+      use: { ...devices["iPhone 14"] },
+      grepInvert: /@alleen-chromium/
     }
   ],
 

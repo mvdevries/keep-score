@@ -58,7 +58,11 @@ async function zetOpslag(page: Page, data: Opslag) {
     ...data
   };
   await page.addInitScript(
-    ([sleutel, waarde]) => window.localStorage.setItem(sleutel as string, waarde as string),
+    ([sleutel, waarde]) => {
+      if (!window.localStorage.getItem(sleutel as string)) {
+        window.localStorage.setItem(sleutel as string, waarde as string);
+      }
+    },
     [OPSLAG_SLEUTEL, JSON.stringify(volledig)] as const
   );
 }
@@ -85,11 +89,13 @@ export const test = base.extend<{ app: Hulp }>({
     await use({
       opslag: (data) => zetOpslag(page, data),
       willekeur: (reeks) => zetWillekeur(page, reeks),
-      leesOpslag: async () =>
-        page.evaluate((sleutel) => {
+      leesOpslag: async () => {
+        await page.waitForTimeout(250);
+        return page.evaluate((sleutel) => {
           const raw = window.localStorage.getItem(sleutel as string);
           return raw ? JSON.parse(raw) : null;
-        }, OPSLAG_SLEUTEL)
+        }, OPSLAG_SLEUTEL);
+      }
     });
   }
 });

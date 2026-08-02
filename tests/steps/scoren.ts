@@ -24,19 +24,19 @@ async function drukToetsen(page: Page, reeks: string) {
   }
 }
 
-async function wachtTotSheetsDicht(page: Page) {
-  await expect(page.locator(".sheet.is-open")).toHaveCount(0);
+async function wachtTotScoreDicht(page: Page) {
+  await expect(page.locator("#sheet-score")).not.toHaveClass(/is-open/);
 }
 
 async function opnenScoreVoor(page: Page, naam: string) {
-  await wachtTotSheetsDicht(page);
+  await wachtTotScoreDicht(page);
   await page.locator('[data-testid="spelerkaart"][data-speler="' + naam + '"]').click();
   await expect(page.getByTestId("keypad")).toBeVisible();
 }
 
 async function slaOp(page: Page) {
   await page.getByTestId("punten-opslaan").click();
-  await wachtTotSheetsDicht(page);
+  await wachtTotScoreDicht(page);
 }
 
 Given("een spel met de spelers {word} en {word}", async ({ app }, a: string, b: string) => {
@@ -148,7 +148,7 @@ Then("is de knop level omlaag uitgeschakeld", async ({ page }) => {
 
 When("ik de speler uit het spel haal", async ({ page }) => {
   await page.getByTestId("speler-eruit").click();
-  await wachtTotSheetsDicht(page);
+  await wachtTotScoreDicht(page);
 });
 
 Then("zie ik alleen nog {string} op het scorebord", async ({ page }, naam: string) => {

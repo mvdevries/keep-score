@@ -176,12 +176,12 @@
   .select-row.is-on .tick svg{display:block;}
   .tick svg{display:none; width:15px; height:15px; color:#fff;}
   .add-row{color:var(--green); font-weight:700; flex:none;}
-  .naamrij{display:flex; align-items:center; gap:10px;}
-  .naamrij .name-input{flex:1; min-width:0;}
-  .kleurbol{width:54px; height:54px; border-radius:999px; flex:none; box-shadow:var(--shadow); display:grid; place-items:center; color:#fff;}
-  .kleurbol:active{transform:scale(.94);}
-  .select-row .kleurbol{width:40px; height:40px;}
-  .select-row .kleurbol svg{width:15px; height:15px;}
+  .naamveld{display:flex; align-items:center; gap:10px; width:100%; background:var(--card); border-radius:18px; padding:8px; border:2px solid transparent; box-shadow:var(--shadow);}
+  .naamveld:focus-within{border-color:var(--green);}
+  .naamveld input{flex:1; min-width:0; border:0; background:none; outline:none; font-weight:600; padding:0 6px 0 0;}
+  .kleurbol{width:38px; height:38px; border-radius:999px; flex:none; box-shadow:0 1px 3px rgba(18,33,43,.22); display:grid; place-items:center; color:#fff;}
+  .kleurbol svg{width:15px; height:15px;}
+  .kleurbol:active{transform:scale(.92);}
   .kleurrij{display:grid; grid-template-columns:repeat(6,1fr); gap:10px; justify-items:center; margin:14px 2px 4px;}
   .kleurknop{width:40px; height:40px; border-radius:999px; display:grid; place-items:center; box-shadow:0 1px 3px rgba(18,33,43,.2);}
   .kleurknop svg{display:none; width:18px; height:18px; color:#fff;}
@@ -661,9 +661,9 @@ function renderPlayers(){
   const el = document.getElementById("view-players");
   el.innerHTML =
     '<div class="topbar"><h1>Spelers</h1></div>' +
-    '<div class="naamrij">' +
-      '<input class="name-input" id="roster-input" value="' + esc(nieuwSpeler.naam) + '" placeholder="Naam van nieuwe speler" autocomplete="off" enterkeyhint="done">' +
+    '<div class="naamveld">' +
       kleurBol(nieuwSpeler.kleur || volgendeKleur(), "roster") +
+      '<input id="roster-input" value="' + esc(nieuwSpeler.naam) + '" placeholder="Naam van nieuwe speler" autocomplete="off" enterkeyhint="done">' +
     '</div>' +
     '<button class="btn-primary" style="margin-top:12px" data-act="roster-add">Speler toevoegen</button>' +
     '<p class="section-label">' + plural(state.players.length,"speler","spelers") + '</p>' +

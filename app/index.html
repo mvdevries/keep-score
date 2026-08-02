@@ -947,7 +947,7 @@ function winSheet(g){
     '<p class="win-sub">' + g.won.score + ' punten · winscore ' + g.winScore + ' gehaald in ' + esc(g.name) + '</p>' +
     standings(g).map((s,i) => '<div class="stand"><span class="pos">' + (i+1) + '</span><span class="nm">' + esc(s.name) + '</span><span class="sc">' + s.score + '</span></div>').join("") +
     '<button class="btn-primary" style="margin:16px 0 8px" data-act="finish-confirm" data-gid="' + g.id + '">Bewaar in historie</button>' +
-    '<button class="action" data-act="revanche" data-gid="' + g.id + '">Revanche, zelfde spelers</button>' +
+    '<button class="action" data-act="revanche" data-gid="' + g.id + '">Nog een potje</button>' +
     '<button class="action" data-act="keep-playing" data-gid="' + g.id + '">Toch doorspelen, winscore uit</button>', true);
 }
 function sortMenu(g){
@@ -993,7 +993,7 @@ function finishSheet(g){
   actionSheet('<p class="section-label" style="margin-top:0">Eindstand ' + esc(g.name) + '</p>' +
     standings(g).map((s,i) => '<div class="stand"><span class="pos">' + (i+1) + '</span><span class="nm">' + esc(s.name) + (i === 0 ? " 🏆" : "") + '</span><span class="sc">' + s.score + '</span></div>').join("") +
     '<button class="btn-primary" style="margin:14px 0 8px" data-act="finish-confirm" data-gid="' + g.id + '">Bewaar en sluit spel</button>' +
-    '<button class="action" data-act="revanche" data-gid="' + g.id + '">Revanche, zelfde spelers</button>');
+    '<button class="action" data-act="revanche" data-gid="' + g.id + '">Nog een potje</button>');
 }
 
 
@@ -1346,7 +1346,7 @@ document.addEventListener("click", ev => {
       state.games = state.games.filter(x => x.id !== g.id).concat([nieuw]);
       state.openGameId = nieuw.id;
       closeAllSheets(); state.tab = "games"; state.gamesMode = "current"; render(); window.scrollTo(0,0);
-      toast("Revanche, iedereen weer op 0"); break;
+      toast("Nog een potje, iedereen weer op 0"); break;
     }
 
     /* score sheet */

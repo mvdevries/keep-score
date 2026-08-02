@@ -152,6 +152,7 @@
   .tab .ico{width:23px; height:23px;}
 
   .sheet{position:fixed; inset:0; z-index:40; display:none;}
+  #sheet-kleur{z-index:50;}
   .sheet.is-open{display:block;}
   .scrim{position:absolute; inset:0; background:var(--scrim); opacity:0; transition:opacity .22s ease;}
   .sheet.is-open .scrim{opacity:1;}
@@ -175,6 +176,20 @@
   .select-row.is-on .tick svg{display:block;}
   .tick svg{display:none; width:15px; height:15px; color:#fff;}
   .add-row{color:var(--green); font-weight:700; flex:none;}
+  .naamrij{display:flex; align-items:center; gap:10px;}
+  .naamrij .name-input{flex:1; min-width:0;}
+  .kleurbol{width:54px; height:54px; border-radius:999px; flex:none; box-shadow:var(--shadow); display:grid; place-items:center; color:#fff;}
+  .kleurbol:active{transform:scale(.94);}
+  .select-row .kleurbol{width:40px; height:40px;}
+  .select-row .kleurbol svg{width:15px; height:15px;}
+  .kleurrij{display:grid; grid-template-columns:repeat(6,1fr); gap:10px; justify-items:center; margin:14px 2px 4px;}
+  .kleurknop{width:40px; height:40px; border-radius:999px; display:grid; place-items:center; box-shadow:0 1px 3px rgba(18,33,43,.2);}
+  .kleurknop svg{display:none; width:18px; height:18px; color:#fff;}
+  .kleurknop.is-on{box-shadow:0 0 0 3px var(--bg), 0 0 0 5px var(--ink);}
+  .kleurknop.is-on svg{display:block;}
+  .kleurknop:active{transform:scale(.9);}
+  .avatar-btn{flex:none; border-radius:999px; display:block; line-height:0;}
+  .avatar-btn:active{transform:scale(.92);}
   .name-input{width:100%; background:var(--card); border-radius:18px; padding:16px; border:2px solid transparent; box-shadow:var(--shadow); font-weight:600;}
   .name-input:focus{border-color:var(--green); outline:none;}
   .field-label{font-size:14px; font-weight:700; color:var(--ink-soft); margin:16px 4px 8px;}
@@ -332,6 +347,11 @@
   <div class="panel"><div class="sheet-body" id="action-body"></div></div>
 </div>
 
+<div class="sheet" id="sheet-kleur">
+  <div class="scrim" data-close="sheet-kleur"></div>
+  <div class="panel"><div class="sheet-body" id="kleur-body"></div></div>
+</div>
+
 <div id="toast"></div>
 
 <script>
@@ -374,6 +394,8 @@ function ico(name, size, stroke){
 /* ============================ data ============================ */
 const PALETTE = ["#3F8F52","#C8442F","#2F6FBF","#B8860B","#7A4FB0","#1F7A6B",
                  "#C2622D","#B33F7A","#4A56A6","#6E8C1F","#8A5A3C","#2E6B3E"];
+const PALETTE_NAAM = ["groen","rood","blauw","amber","paars","teal",
+                      "oranje","roze","indigo","olijf","bruin","donkergroen"];
 const PALETTE_OUD = ["#2E6B3E","#3F8F52","#57B26B","#7CC85C","#A3CE3E","#1E5033","#5FB89A","#86C258"];
 const PALETTE_V = 2;
 const SORTS = { score:"Hoogste score", low:"Laagste score", name:"Naam (A-Z)", added:"Volgorde toegevoegd" };
@@ -461,14 +483,32 @@ function openSheet(id){ document.getElementById(id).classList.add("is-open"); }
 function closeSheet(id){ document.getElementById(id).classList.remove("is-open"); }
 function closeAllSheets(){ document.querySelectorAll(".sheet").forEach(s => s.classList.remove("is-open")); }
 
-function addPlayer(name){
+function volgendeKleur(){ return PALETTE[state.players.length % PALETTE.length]; }
+function addPlayer(name, kleur){
   const clean = (name || "").trim();
   if(!clean) return null;
   const dup = state.players.find(p => p.name.toLowerCase() === clean.toLowerCase());
   if(dup) return dup;
-  const p = { id:uid(), name:clean, color:PALETTE[state.players.length % PALETTE.length] };
+  const p = { id:uid(), name:clean, color:kleur || volgendeKleur() };
   state.players.push(p);
   return p;
+}
+function kleurRij(actief, terug, pid){
+  return '<div class="kleurrij">' + PALETTE.map((c,i) =>
+    '<button class="kleurknop' + (c === actief ? " is-on" : "") + '" style="background:' + c + '"' +
+      ' data-act="kleur-kies" data-kleur="' + c + '" data-terug="' + terug + '"' + (pid ? ' data-pid="' + pid + '"' : "") +
+      ' aria-label="Kleur ' + PALETTE_NAAM[i] + '">' + ico("check", 18) + '</button>').join("") + '</div>';
+}
+function kleurBol(kleur, terug, pid){
+  return '<button class="kleurbol" style="background:' + kleur + '" data-act="kleur-open" data-terug="' + terug + '"' +
+    (pid ? ' data-pid="' + pid + '"' : "") + ' aria-label="Kleur kiezen">' + ico("chevronDown", 18) + '</button>';
+}
+function kleurSheet(titel, actief, terug, pid){
+  document.getElementById("kleur-body").innerHTML =
+    '<p class="section-label" style="margin-top:0">' + titel + '</p>' +
+    kleurRij(actief, terug, pid) +
+    '<button class="action" style="margin-top:16px" data-close="sheet-kleur">Annuleer</button>';
+  openSheet("sheet-kleur");
 }
 function goalText(g){
   if(!g.winScore) return "geen winscore";
@@ -616,19 +656,27 @@ function renderTemplates(){
       : '<div class="empty"><div class="mark">🧩</div><h2>Nog geen templates</h2><p>Maak er een voor je vaste spellen, bijvoorbeeld eerst bij 200 punten.</p><button class="btn-primary" data-act="tpl-new">Template maken</button></div>');
 }
 
+let nieuwSpeler = { naam:"", kleur:null };
 function renderPlayers(){
   const el = document.getElementById("view-players");
   el.innerHTML =
     '<div class="topbar"><h1>Spelers</h1></div>' +
-    '<input class="name-input" id="roster-input" placeholder="Naam van nieuwe speler" autocomplete="off" enterkeyhint="done">' +
+    '<div class="naamrij">' +
+      '<input class="name-input" id="roster-input" value="' + esc(nieuwSpeler.naam) + '" placeholder="Naam van nieuwe speler" autocomplete="off" enterkeyhint="done">' +
+      kleurBol(nieuwSpeler.kleur || volgendeKleur(), "roster") +
+    '</div>' +
     '<button class="btn-primary" style="margin-top:12px" data-act="roster-add">Speler toevoegen</button>' +
     '<p class="section-label">' + plural(state.players.length,"speler","spelers") + '</p>' +
     (state.players.length
       ? state.players.map(p =>
-          '<div class="select-row">' + avatar(p,"sm") + '<span class="nm">' + esc(p.name) + '</span>' +
-          '<button class="del" data-act="roster-del" data-pid="' + p.id + '">Verwijder</button></div>').join("")
+          '<div class="select-row">' +
+            '<button class="avatar-btn" data-act="kleur-open" data-terug="roster" data-pid="' + p.id + '" aria-label="Kleur van ' + esc(p.name) + ' wijzigen">' + avatar(p,"sm") + '</button>' +
+            '<span class="nm">' + esc(p.name) + '</span>' +
+            '<button class="del" data-act="roster-del" data-pid="' + p.id + '">Verwijder</button></div>').join("")
       : '<p style="color:var(--ink-soft); padding:0 4px">Nog niemand. Voeg je vaste speelgroep hierboven toe.</p>') +
-    '<p style="color:var(--ink-soft); font-size:13px; padding:22px 4px 0">Spelers, spellen, templates en historie worden bewaard in ' + store.label + ', alleen op dit apparaat.</p>';
+    '<p style="color:var(--ink-soft); font-size:13px; padding:22px 4px 0">Tik op een cirkel om de kleur van die speler te wijzigen. Alles wordt bewaard in ' + store.label + ', alleen op dit apparaat.</p>';
+  const inp = document.getElementById("roster-input");
+  inp.addEventListener("input", () => { nieuwSpeler.naam = inp.value; });
 }
 
 function renderHistory(){
@@ -653,6 +701,7 @@ function renderHistory(){
 let setup = { sel:new Set(), tid:null, name:"", touched:false };
 function openSetup(){
   setup = { sel:new Set(), tid:state.templates.length ? state.templates[0].id : null, name:"", touched:false };
+  nieuwSpeler = { naam:"", kleur:null };
   openSheet("sheet-setup");
   renderSetup();
 }
@@ -685,11 +734,14 @@ function renderSetup(){
         avatar(p,"sm") + '<span class="nm">' + esc(p.name) + '</span>' +
         '<span class="tick">' + ico("check", 15) + '</span></button>').join("") +
     '<div class="select-row" style="gap:10px">' +
-      '<input class="nm" id="setup-new" placeholder="Nieuwe speler" style="border:0; background:none; outline:none" autocomplete="off" enterkeyhint="done">' +
+      kleurBol(nieuwSpeler.kleur || volgendeKleur(), "setup") +
+      '<input class="nm" id="setup-new" value="' + esc(nieuwSpeler.naam) + '" placeholder="Nieuwe speler" style="border:0; background:none; outline:none" autocomplete="off" enterkeyhint="done">' +
       '<button class="add-row" data-act="setup-add">Toevoegen</button></div>';
   document.getElementById("setup-start").disabled = setup.sel.size === 0;
   const inp = document.getElementById("game-name");
   inp.addEventListener("input", () => { setup.name = inp.value; setup.touched = true; });
+  const nieuw = document.getElementById("setup-new");
+  nieuw.addEventListener("input", () => { nieuwSpeler.naam = nieuw.value; });
 }
 function startGame(){
   const t = setupTemplate();
@@ -930,8 +982,11 @@ function addToGameSheet(g){
   actionSheet('<p class="section-label" style="margin-top:0">Speler erbij</p>' +
     free.map(p => '<button class="action" data-act="join" data-pid="' + p.id + '">' + esc(p.name) + '</button>').join("") +
     '<div class="select-row" style="gap:10px">' +
-      '<input class="nm" id="join-new" placeholder="Nieuwe speler" style="border:0; background:none; outline:none" autocomplete="off" enterkeyhint="done">' +
+      kleurBol(nieuwSpeler.kleur || volgendeKleur(), "join") +
+      '<input class="nm" id="join-new" value="' + esc(nieuwSpeler.naam) + '" placeholder="Nieuwe speler" style="border:0; background:none; outline:none" autocomplete="off" enterkeyhint="done">' +
       '<button class="add-row" data-act="join-new">Toevoegen</button></div>');
+  const nieuw = document.getElementById("join-new");
+  nieuw.addEventListener("input", () => { nieuwSpeler.naam = nieuw.value; });
 }
 function finishSheet(g){
   actionSheet('<p class="section-label" style="margin-top:0">Eindstand ' + esc(g.name) + '</p>' +
@@ -1212,7 +1267,8 @@ function pick2Setup(){
 
 /* ============================ events ============================ */
 document.addEventListener("click", ev => {
-  if(ev.target.closest("[data-close]")){ closeAllSheets(); return; }
+  const sluit = ev.target.closest("[data-close]");
+  if(sluit){ sluit.dataset.close ? closeSheet(sluit.dataset.close) : closeAllSheets(); return; }
 
   const key = ev.target.closest("[data-key]");
   if(key){ keyPress(key.dataset.key); return; }
@@ -1262,11 +1318,13 @@ document.addEventListener("click", ev => {
       state.openGameId = null; closeAllSheets(); render(); toast("Spel weggegooid"); break;
     case "keep-playing":
       g.winScore = 0; g.won = null; touch(g); closeAllSheets(); render(); toast("Winscore uit, jullie kunnen doorspelen"); break;
-    case "add-to-game": addToGameSheet(g); break;
+    case "add-to-game": nieuwSpeler = { naam:"", kleur:null }; addToGameSheet(g); break;
     case "join": g.entrants.push({ pid, level:1, scores:[] }); touch(g); closeAllSheets(); render(); break;
     case "join-new": {
-      const p = addPlayer(document.getElementById("join-new").value);
+      const p = addPlayer(document.getElementById("join-new").value, nieuwSpeler.kleur);
       if(!p){ toast("Vul eerst een naam in"); break; }
+      if(g.entrants.some(e => e.pid === p.id)){ toast(p.name + " doet al mee"); break; }
+      nieuwSpeler = { naam:"", kleur:null };
       g.entrants.push({ pid:p.id, level:1, scores:[] }); touch(g); closeAllSheets(); render(); break;
     }
     case "finish": finishSheet(g); break;
@@ -1330,8 +1388,9 @@ document.addEventListener("click", ev => {
     case "setup-toggle": setup.sel.has(pid) ? setup.sel.delete(pid) : setup.sel.add(pid); renderSetup(); break;
     case "setup-add": {
       const inp = document.getElementById("setup-new");
-      const p = addPlayer(inp.value);
+      const p = addPlayer(inp.value, nieuwSpeler.kleur);
       if(!p){ toast("Vul eerst een naam in"); break; }
+      nieuwSpeler = { naam:"", kleur:null };
       setup.sel.add(p.id); renderSetup(); save(); break;
     }
 
@@ -1342,10 +1401,32 @@ document.addEventListener("click", ev => {
     case "tpl-mode": readTemplateForm(); tpl.winMode = btn.dataset.mode; renderTemplateForm(); break;
     case "tpl-levels": readTemplateForm(); tpl.levels = !!btn.dataset.on; renderTemplateForm(); break;
 
+    /* kleuren */
+    case "kleur-open": {
+      const terug = btn.dataset.terug;
+      if(pid){ const p = findPlayer(pid); kleurSheet("Kleur van " + esc(p.name), p.color, terug, pid); }
+      else kleurSheet("Kleur voor de nieuwe speler", nieuwSpeler.kleur || volgendeKleur(), terug, "");
+      break;
+    }
+    case "kleur-kies": {
+      if(pid){ const p = state.players.find(x => x.id === pid); if(p) p.color = btn.dataset.kleur; }
+      else nieuwSpeler.kleur = btn.dataset.kleur;
+      closeSheet("sheet-kleur");
+      const terug = btn.dataset.terug;
+      if(terug === "setup") renderSetup();
+      else if(terug === "join") addToGameSheet(g);
+      else render();
+      break;
+    }
+
     /* spelers */
     case "roster-add": {
       const inp = document.getElementById("roster-input");
-      if(!addPlayer(inp.value)){ toast("Vul eerst een naam in"); break; }
+      const voor = state.players.length;
+      const p = addPlayer(inp.value, nieuwSpeler.kleur);
+      if(!p){ toast("Vul eerst een naam in"); break; }
+      if(state.players.length === voor){ toast(p.name + " staat al in de lijst"); break; }
+      nieuwSpeler = { naam:"", kleur:null };
       render(); break;
     }
     case "roster-del": {

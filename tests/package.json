@@ -1,0 +1,19 @@
+{
+  "name": "keepscore-tests",
+  "version": "1.0.0",
+  "private": true,
+  "description": "End-to-end tests voor Keep Score. Hoort niet bij de app zelf: app/ blijft een map met statische bestanden zonder dependencies en zonder buildstap.",
+  "type": "module",
+  "scripts": {
+    "test": "bddgen && playwright test",
+    "test:chromium": "bddgen && playwright test --project=android",
+    "test:webkit": "bddgen && playwright test --project=ios",
+    "test:ui": "bddgen && playwright test --ui",
+    "report": "playwright show-report",
+    "install-browsers": "playwright install chromium webkit"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.62.1",
+    "playwright-bdd": "^9.2.0"
+  }
+}

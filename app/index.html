@@ -314,7 +314,7 @@
     <div class="sheet-head">
       <button class="pill green" data-close>Annuleer</button>
       <h2>Nieuw spel</h2>
-      <button class="pill solid" id="setup-start" disabled>Start</button>
+      <button class="pill solid" id="setup-start" data-testid="spel-starten" disabled>Start</button>
     </div>
     <div class="sheet-body" id="setup-body"></div>
   </div>
@@ -326,7 +326,7 @@
     <div class="sheet-head">
       <button class="pill green" data-close>Annuleer</button>
       <h2 id="tpl-title">Template</h2>
-      <button class="pill solid" id="tpl-save">Bewaar</button>
+      <button class="pill solid" id="tpl-save" data-testid="template-bewaren">Bewaar</button>
     </div>
     <div class="sheet-body" id="tpl-body"></div>
   </div>
@@ -338,7 +338,7 @@
     <div class="sheet-head">
       <button class="pill green" data-close>Annuleer</button>
       <h2 id="score-title">Punten toevoegen</h2>
-      <button class="pill" id="score-toggle">Rondes</button>
+      <button class="pill" id="score-toggle" data-testid="toon-rondes">Rondes</button>
     </div>
     <div class="sheet-body" id="score-body"></div>
   </div>
@@ -351,10 +351,10 @@
 
 <div class="sheet" id="sheet-kleur">
   <div class="scrim" data-close="sheet-kleur"></div>
-  <div class="panel"><div class="sheet-body" id="kleur-body"></div></div>
+  <div class="panel"><div class="sheet-body" id="kleur-body" data-testid="kleursheet"></div></div>
 </div>
 
-<div id="toast"></div>
+<div id="toast" data-testid="toast"></div>
 
 <script>
 "use strict";
@@ -496,13 +496,13 @@ function addPlayer(name, kleur){
   return p;
 }
 function kleurRij(actief, terug, pid){
-  return '<div class="kleurrij">' + PALETTE.map((c,i) =>
-    '<button class="kleurknop' + (c === actief ? " is-on" : "") + '" style="background:' + c + '"' +
+  return '<div class="kleurrij" data-testid="kleurrij">' + PALETTE.map((c,i) =>
+    '<button class="kleurknop' + (c === actief ? " is-on" : "") + '" style="background:' + c + '" data-testid="kleur-' + PALETTE_NAAM[i] + '"' +
       ' data-act="kleur-kies" data-kleur="' + c + '" data-terug="' + terug + '"' + (pid ? ' data-pid="' + pid + '"' : "") +
       ' aria-label="Kleur ' + PALETTE_NAAM[i] + '">' + ico("check", 18) + '</button>').join("") + '</div>';
 }
 function kleurBol(kleur, terug, pid){
-  return '<button class="kleurbol" style="background:' + kleur + '" data-act="kleur-open" data-terug="' + terug + '"' +
+  return '<button class="kleurbol" style="background:' + kleur + '" data-act="kleur-open" data-terug="' + terug + '" data-testid="kleurbol" data-kleur-nu="' + kleur + '"' +
     (pid ? ' data-pid="' + pid + '"' : "") + ' aria-label="Kleur kiezen">' + ico("chevronDown", 18) + '</button>';
 }
 function kleurSheet(titel, actief, terug, pid){
@@ -546,7 +546,7 @@ const TABS = [
 ];
 function renderTabs(){
   document.getElementById("tabbar").innerHTML = TABS.map(t =>
-    '<button class="tab' + (state.tab === t.id ? " is-active" : "") + '" data-act="tab" data-tab="' + t.id + '">' +
+    '<button class="tab' + (state.tab === t.id ? " is-active" : "") + '" data-act="tab" data-tab="' + t.id + '" data-testid="tab-' + t.id + '">' +
       ico(t.icon, 23) + t.label + '</button>').join("");
 }
 
@@ -565,13 +565,13 @@ function renderGameList(){
   const games = state.games.slice().sort((a,b) => (b.updated||0) - (a.updated||0));
   el.innerHTML =
     '<div class="topbar"><h1>Spellen</h1>' +
-      '<button class="pill solid" data-act="new-game">+ Nieuw</button>' +
-      '<button class="icon-btn" data-act="show-history" aria-label="Historie">' + ico("history", 21) + '</button></div>' +
+      '<button class="pill solid" data-act="new-game" data-testid="nieuw-spel">+ Nieuw</button>' +
+      '<button class="icon-btn" data-act="show-history" aria-label="Historie" data-testid="toon-historie">' + ico("history", 21) + '</button></div>' +
     (games.length
       ? games.map(g => {
           const st = standings(g);
           const rounds = Math.max.apply(null, g.entrants.map(e => e.scores.length).concat([0]));
-          return '<button class="card ' + (g.won ? "won" : "") + '" data-act="open-game" data-gid="' + g.id + '">' +
+          return '<button class="card ' + (g.won ? "won" : "") + '" data-act="open-game" data-gid="' + g.id + '" data-testid="spelkaart">' +
             '<span class="pc-info">' +
               '<span class="pc-name"><span>' + esc(g.name) + '</span>' +
                 (g.won ? '<em class="chip gold">gewonnen</em>' : "") + '</span>' +
@@ -583,7 +583,7 @@ function renderGameList(){
         }).join("")
       : '<div class="empty"><div class="mark">🎲</div><h2>Geen spellen bezig</h2>' +
         '<p>Je kunt meerdere spellen tegelijk open hebben. Start er een met of zonder template.</p>' +
-        '<button class="btn-primary" data-act="new-game">Nieuw spel starten</button></div>');
+        '<button class="btn-primary" data-act="new-game" data-testid="nieuw-spel-leeg">Nieuw spel starten</button></div>');
 }
 
 function renderGameDetail(){
@@ -598,24 +598,24 @@ function renderGameDetail(){
 
   el.innerHTML =
     '<div class="topbar">' +
-      '<button class="icon-btn" data-act="back" aria-label="Terug naar spellen">' +
+      '<button class="icon-btn" data-act="back" aria-label="Terug naar spellen" data-testid="terug">' +
         ico("chevronLeft", 22) + '</button>' +
-      '<button class="title-btn" data-act="game-menu"><span>' + esc(g.name) + '</span>' +
+      '<button class="title-btn" data-act="game-menu" data-testid="spel-menu"><span data-testid="spel-naam">' + esc(g.name) + '</span>' +
         ico("chevronDown", 16) + '</button>' +
-      '<button class="pill green" data-act="finish">' + ico("flag", 18) + '<span>Beëindig</span></button>' +
+      '<button class="pill green" data-act="finish" data-testid="beeindig">' + ico("flag", 18) + '<span>Beëindig</span></button>' +
     '</div>' +
 
     (g.won
       ? '<div class="banner"><span style="font-size:30px">🏆</span><span class="t"><strong>' +
           (winners.length > 1 ? "Gelijkspel: " + esc(winners.join(" & ")) : esc(winners[0]) + " wint") +
           '</strong><small>' + g.won.score + ' punten · winscore ' + g.winScore + '</small></span></div>' +
-        '<button class="btn-primary" data-act="finish">Eindstand bewaren</button>' +
-        '<button class="btn-flat" data-act="keep-playing">Toch doorspelen, winscore uit</button>' +
+        '<button class="btn-primary" data-act="finish" data-testid="eindstand-bewaren">Eindstand bewaren</button>' +
+        '<button class="btn-flat" data-act="keep-playing" data-testid="doorspelen">Toch doorspelen, winscore uit</button>' +
         '<p class="section-label">Stand</p>'
       : '<div class="row2">' +
-          '<button class="pill ghost" data-act="sort">' +
+          '<button class="pill ghost" data-act="sort" data-testid="sorteer">' +
             ico("sort", 18) + 'Sorteer</button>' +
-          '<button class="pill ghost" data-act="add-to-game">' +
+          '<button class="pill ghost" data-act="add-to-game" data-testid="speler-erbij">' +
             ico("userPlus", 18) + 'Speler erbij</button>' +
         '</div>') +
 
@@ -626,15 +626,15 @@ function renderGameDetail(){
       const raw = g.winScore ? Math.max(0, Math.min(100, Math.round(t / g.winScore * 100))) : 0;
       const pct = g.winMode === "low" ? 100 - raw : raw;
       const spent = g.winMode === "low" && raw >= 100;
-      return '<button class="card ' + (isWinner ? "won" : "") + '" data-act="score" data-pid="' + e.pid + '">' +
+      return '<button class="card ' + (isWinner ? "won" : "") + '" data-act="score" data-pid="' + e.pid + '" data-testid="spelerkaart" data-speler="' + esc(p.name) + '">' +
         avatar(p) +
         '<span class="pc-info">' +
-          '<span class="pc-name"><span>' + esc(p.name) + '</span>' +
-            (isWinner ? '<em class="chip gold">winnaar</em>' : lead ? '<em class="chip">leidt</em>' : "") + '</span>' +
-          '<span class="pc-meta">' + (g.levels ? "Level " + e.level + " · " : "") + plural(e.scores.length,"ronde","rondes") + '</span>' +
-          (g.winScore ? '<span class="bar' + (spent ? " spent" : "") + '"><i class="' + (g.winMode !== "low" && raw >= 100 ? "full" : "") + '" style="width:' + pct + '%"></i></span>' : "") +
+          '<span class="pc-name"><span data-testid="spelerkaart-naam">' + esc(p.name) + '</span>' +
+            (isWinner ? '<em class="chip gold" data-testid="chip-winnaar">winnaar</em>' : lead ? '<em class="chip" data-testid="chip-leidt">leidt</em>' : "") + '</span>' +
+          '<span class="pc-meta" data-testid="spelerkaart-meta">' + (g.levels ? "Level " + e.level + " · " : "") + plural(e.scores.length,"ronde","rondes") + '</span>' +
+          (g.winScore ? '<span class="bar' + (spent ? " spent" : "") + '" data-testid="voortgangsbalk" data-vol="' + pct + '" data-op="' + (spent ? "grens" : "") + '"><i class="' + (g.winMode !== "low" && raw >= 100 ? "full" : "") + '" style="width:' + pct + '%"></i></span>' : "") +
         '</span>' +
-        '<span class="pc-score">' + t + '</span>' +
+        '<span class="pc-score" data-testid="spelerkaart-score">' + t + '</span>' +
       '</button>';
     }).join("") +
 
@@ -644,16 +644,16 @@ function renderGameDetail(){
 function renderTemplates(){
   const el = document.getElementById("view-templates");
   el.innerHTML =
-    '<div class="topbar"><h1>Templates</h1><button class="pill solid" data-act="tpl-new">+ Nieuw</button></div>' +
+    '<div class="topbar"><h1>Templates</h1><button class="pill solid" data-act="tpl-new" data-testid="template-nieuw">+ Nieuw</button></div>' +
     '<p style="color:var(--ink-soft); font-size:15px; margin:0 4px 16px">Een template onthoudt de winscore en of je levels bijhoudt. Bij het starten van een spel kies je er een.</p>' +
     (state.templates.length
       ? state.templates.map(t =>
-          '<div class="select-row">' +
+          '<div class="select-row" data-testid="templaterij" data-template="' + esc(t.name) + '">' +
             '<span class="nm">' + esc(t.name) +
               '<span class="sub">' + (t.winScore ? (t.winMode === "high" ? "eerst bij " + t.winScore + " wint" : "grens " + t.winScore + ", laagste wint") : "geen winscore") +
               (t.levels ? " · levels aan" : "") + '</span></span>' +
-            '<button class="add-row" data-act="tpl-edit" data-tid="' + t.id + '">Wijzig</button>' +
-            '<button class="del" data-act="tpl-del" data-tid="' + t.id + '">Wis</button>' +
+            '<button class="add-row" data-act="tpl-edit" data-tid="' + t.id + '" data-testid="template-wijzig">Wijzig</button>' +
+            '<button class="del" data-act="tpl-del" data-tid="' + t.id + '" data-testid="template-wis">Wis</button>' +
           '</div>').join("")
       : '<div class="empty"><div class="mark">🧩</div><h2>Nog geen templates</h2><p>Maak er een voor je vaste spellen, bijvoorbeeld eerst bij 200 punten.</p><button class="btn-primary" data-act="tpl-new">Template maken</button></div>');
 }
@@ -665,16 +665,16 @@ function renderPlayers(){
     '<div class="topbar"><h1>Spelers</h1></div>' +
     '<div class="naamveld">' +
       kleurBol(nieuwSpeler.kleur || volgendeKleur(), "roster") +
-      '<input id="roster-input" value="' + esc(nieuwSpeler.naam) + '" placeholder="Naam van nieuwe speler" autocomplete="off" enterkeyhint="done">' +
+      '<input id="roster-input" data-testid="speler-naam" value="' + esc(nieuwSpeler.naam) + '" placeholder="Naam van nieuwe speler" autocomplete="off" enterkeyhint="done">' +
     '</div>' +
-    '<button class="btn-primary" style="margin-top:12px" data-act="roster-add">Speler toevoegen</button>' +
+    '<button class="btn-primary" style="margin-top:12px" data-act="roster-add" data-testid="speler-toevoegen">Speler toevoegen</button>' +
     '<p class="section-label">' + plural(state.players.length,"speler","spelers") + '</p>' +
     (state.players.length
       ? state.players.map(p =>
-          '<div class="select-row">' +
-            '<button class="avatar-btn" data-act="kleur-open" data-terug="roster" data-pid="' + p.id + '" aria-label="Kleur van ' + esc(p.name) + ' wijzigen">' + avatar(p,"sm") + '</button>' +
-            '<span class="nm">' + esc(p.name) + '</span>' +
-            '<button class="del" data-act="roster-del" data-pid="' + p.id + '">Verwijder</button></div>').join("")
+          '<div class="select-row" data-testid="spelerrij" data-speler="' + esc(p.name) + '">' +
+            '<button class="avatar-btn" data-act="kleur-open" data-terug="roster" data-pid="' + p.id + '" data-testid="spelerrij-kleur" aria-label="Kleur van ' + esc(p.name) + ' wijzigen">' + avatar(p,"sm") + '</button>' +
+            '<span class="nm" data-testid="spelerrij-naam">' + esc(p.name) + '</span>' +
+            '<button class="del" data-act="roster-del" data-pid="' + p.id + '" data-testid="speler-verwijderen">Verwijder</button></div>').join("")
       : '<p style="color:var(--ink-soft); padding:0 4px">Nog niemand. Voeg je vaste speelgroep hierboven toe.</p>') +
     '<p style="color:var(--ink-soft); font-size:13px; padding:22px 4px 0">Tik op een cirkel om de kleur van die speler te wijzigen. Alles wordt bewaard in ' + store.label + ', alleen op dit apparaat.</p>';
   const inp = document.getElementById("roster-input");
@@ -685,16 +685,16 @@ function renderHistory(){
   const el = document.getElementById("view-games");
   el.innerHTML =
     '<div class="topbar"><h1>Historie</h1>' +
-      '<button class="icon-btn" data-act="hide-history" aria-label="Terug naar spellen">' + ico("chevronLeft", 22) + '</button></div>' +
+      '<button class="icon-btn" data-act="hide-history" aria-label="Terug naar spellen" data-testid="verberg-historie">' + ico("chevronLeft", 22) + '</button></div>' +
     (state.history.length
       ? state.history.map((h,i) =>
-          '<div class="card" style="display:block">' +
+          '<div class="card" style="display:block" data-testid="historie-item">' +
             '<div style="display:flex; align-items:baseline; gap:8px; margin-bottom:6px">' +
               '<strong style="font-size:19px; letter-spacing:-.3px">' + esc(h.name) + '</strong>' +
               '<span style="color:var(--ink-soft); font-size:14px; margin-left:auto">' + esc(h.date) + '</span></div>' +
             h.standings.map((s,idx) =>
               '<div class="stand"><span class="pos">' + (idx+1) + '</span><span class="nm">' + esc(s.name) + (idx === 0 ? " 🏆" : "") + '</span><span class="sc">' + s.score + '</span></div>').join("") +
-            '<button class="del" style="padding:10px 0 0" data-act="hist-del" data-idx="' + i + '">Verwijder uit historie</button>' +
+            '<button class="del" style="padding:10px 0 0" data-act="hist-del" data-idx="' + i + '" data-testid="historie-verwijderen">Verwijder uit historie</button>' +
           '</div>').join("")
       : '<div class="empty"><div class="mark">📜</div><h2>Nog geen afgeronde spellen</h2><p>Beëindig een spel en de eindstand landt hier.</p></div>');
 }
@@ -716,29 +716,29 @@ function renderSetup(){
   const t = setupTemplate();
   document.getElementById("setup-body").innerHTML =
     '<p class="field-label" style="margin-top:0">Template</p>' +
-    '<button class="select-row ' + (setup.tid === null ? "is-on" : "") + '" data-act="setup-tpl" data-tid="">' +
+    '<button class="select-row ' + (setup.tid === null ? "is-on" : "") + '" data-act="setup-tpl" data-tid="" data-testid="template-vrij-spel">' +
       '<span class="nm">Vrij spel<span class="sub">geen winscore, levels aan</span></span>' +
       '<span class="tick">' + ico("check", 15) + '</span></button>' +
     state.templates.map(tp =>
-      '<button class="select-row ' + (setup.tid === tp.id ? "is-on" : "") + '" data-act="setup-tpl" data-tid="' + tp.id + '">' +
+      '<button class="select-row ' + (setup.tid === tp.id ? "is-on" : "") + '" data-act="setup-tpl" data-tid="' + tp.id + '" data-testid="template-optie" data-template="' + esc(tp.name) + '">' +
         '<span class="nm">' + esc(tp.name) + '<span class="sub">' +
           (tp.winScore ? (tp.winMode === "high" ? "eerst bij " + tp.winScore + " wint" : "grens " + tp.winScore + ", laagste wint") : "geen winscore") +
           (tp.levels ? " · levels aan" : "") + '</span></span>' +
         '<span class="tick">' + ico("check", 15) + '</span></button>').join("") +
 
     '<p class="field-label">Naam van dit spel</p>' +
-    '<input class="name-input" id="game-name" value="' + esc(setupName()) + '" placeholder="Spelavond" autocomplete="off">' +
+    '<input class="name-input" id="game-name" data-testid="spel-naam-invoer" value="' + esc(setupName()) + '" placeholder="Spelavond" autocomplete="off">' +
 
     '<p class="field-label">Wie doet mee?</p>' +
     (state.players.length ? "" : '<p style="color:var(--ink-soft); font-size:15px; margin:0 4px 10px">Nog geen spelers. Typ hieronder een naam en tik op Toevoegen.</p>') +
     state.players.map(p =>
-      '<button class="select-row ' + (setup.sel.has(p.id) ? "is-on" : "") + '" data-act="setup-toggle" data-pid="' + p.id + '">' +
+      '<button class="select-row ' + (setup.sel.has(p.id) ? "is-on" : "") + '" data-act="setup-toggle" data-pid="' + p.id + '" data-testid="setup-speler" data-speler="' + esc(p.name) + '">' +
         avatar(p,"sm") + '<span class="nm">' + esc(p.name) + '</span>' +
         '<span class="tick">' + ico("check", 15) + '</span></button>').join("") +
     '<div class="select-row" style="gap:10px">' +
       kleurBol(nieuwSpeler.kleur || volgendeKleur(), "setup") +
-      '<input class="nm" id="setup-new" value="' + esc(nieuwSpeler.naam) + '" placeholder="Nieuwe speler" style="border:0; background:none; outline:none" autocomplete="off" enterkeyhint="done">' +
-      '<button class="add-row" data-act="setup-add">Toevoegen</button></div>';
+      '<input class="nm" id="setup-new" data-testid="setup-nieuwe-speler" value="' + esc(nieuwSpeler.naam) + '" placeholder="Nieuwe speler" style="border:0; background:none; outline:none" autocomplete="off" enterkeyhint="done">' +
+      '<button class="add-row" data-act="setup-add" data-testid="setup-toevoegen">Toevoegen</button></div>';
   document.getElementById("setup-start").disabled = setup.sel.size === 0;
   const inp = document.getElementById("game-name");
   inp.addEventListener("input", () => { setup.name = inp.value; setup.touched = true; });
@@ -779,9 +779,9 @@ function openTemplate(id){
 function renderTemplateForm(){
   document.getElementById("tpl-body").innerHTML =
     '<p class="field-label" style="margin-top:0">Naam</p>' +
-    '<input class="name-input" id="tpl-name" value="' + esc(tpl.name) + '" placeholder="Bijvoorbeeld Flip 7" autocomplete="off">' +
+    '<input class="name-input" id="tpl-name" data-testid="template-naam" value="' + esc(tpl.name) + '" placeholder="Bijvoorbeeld Flip 7" autocomplete="off">' +
     '<p class="field-label">Winscore</p>' +
-    '<input class="name-input" id="tpl-score" inputmode="numeric" value="' + (tpl.winScore || "") + '" placeholder="0 = geen winscore">' +
+    '<input class="name-input" id="tpl-score" data-testid="template-winscore" inputmode="numeric" value="' + (tpl.winScore || "") + '" placeholder="0 = geen winscore">' +
     '<p style="color:var(--ink-soft); font-size:14px; margin:8px 4px 0">Zodra iemand deze score haalt, gaat het spel direct in de winst.</p>' +
     '<p class="field-label">Wie wint dan?</p>' +
     '<div class="seg">' +
@@ -873,12 +873,12 @@ function renderScore(){
       '<div class="score-player" style="padding-bottom:16px">' + avatar(p) + '<span class="nm">' + esc(p.name) + '</span></div>' +
       (e.scores.length
         ? e.scores.map((s,i) =>
-            '<div class="entry"><span class="rnd">Ronde ' + (i+1) + '</span>' +
-            '<span class="pts ' + (s.v < 0 ? "neg" : "") + '">' + (s.v > 0 ? "+" : "") + s.v + '</span>' +
-            '<button class="del" data-act="sc-del" data-idx="' + i + '">Wis</button></div>').join("")
+            '<div class="entry" data-testid="ronde"><span class="rnd">Ronde ' + (i+1) + '</span>' +
+            '<span class="pts ' + (s.v < 0 ? "neg" : "") + '" data-testid="ronde-punten">' + (s.v > 0 ? "+" : "") + s.v + '</span>' +
+            '<button class="del" data-act="sc-del" data-idx="' + i + '" data-testid="ronde-wissen">Wis</button></div>').join("")
         : '<p style="color:var(--ink-soft); padding:4px">Nog geen punten voor ' + esc(p.name) + '.</p>') +
-      '<div class="total-row"><span>Totaal</span><span>' + total(e) + '</span></div>' +
-      '<button class="action danger" data-act="sc-kick">Haal ' + esc(p.name) + ' uit dit spel</button>';
+      '<div class="total-row"><span>Totaal</span><span data-testid="rondes-totaal">' + total(e) + '</span></div>' +
+      '<button class="action danger" data-act="sc-kick" data-testid="speler-eruit">Haal ' + esc(p.name) + ' uit dit spel</button>';
     return;
   }
 
@@ -891,36 +891,36 @@ function renderScore(){
     '<div class="score-player">' + avatar(p) + '<span class="nm">' + esc(p.name) + '</span>' +
       (g.levels
         ? '<span class="level-stack">' +
-            '<button class="lvl-btn" data-act="lvl-up" aria-label="Level omhoog">' + ico("chevronUp", 26) + '</button>' +
-            '<span class="lvl-read">Level<b>' + e.level + '</b></span>' +
-            '<button class="lvl-btn down" data-act="lvl-down" aria-label="Level omlaag"' + (e.level <= 1 ? " disabled" : "") + '>' + ico("chevronDown", 26) + '</button>' +
+            '<button class="lvl-btn" data-act="lvl-up" data-testid="level-omhoog" aria-label="Level omhoog">' + ico("chevronUp", 26) + '</button>' +
+            '<span class="lvl-read">Level<b data-testid="level-waarde">' + e.level + '</b></span>' +
+            '<button class="lvl-btn down" data-act="lvl-down" data-testid="level-omlaag" aria-label="Level omlaag"' + (e.level <= 1 ? " disabled" : "") + '>' + ico("chevronDown", 26) + '</button>' +
           '</span>'
         : "") +
     '</div>' +
     '<div class="display">' +
-      '<div class="sum">' + (heeftSom ? esc(exprPretty(sc.expr)) : "&nbsp;") + '</div>' +
-      '<div class="val ' + (som === null && !losseOp ? "placeholder" : "") + '">' +
+      '<div class="sum" data-testid="display-som">' + (heeftSom ? esc(exprPretty(sc.expr)) : "&nbsp;") + '</div>' +
+      '<div class="val ' + (som === null && !losseOp ? "placeholder" : "") + '" data-testid="display-waarde" data-leeg="' + (som === null) + '">' +
         (som !== null ? som : losseOp ? (sc.expr === "-" ? "&minus;" : "+") : "&mdash;") + '</div>' +
-      '<div class="lbl">Punten' + (heeftSom ? (sc.expr.indexOf("*") > -1 ? " uitgerekend" : " bij elkaar") : "") + '</div>' +
-      '<div class="hint">' + (som !== null
+      '<div class="lbl" data-testid="display-label">Punten' + (heeftSom ? (sc.expr.indexOf("*") > -1 ? " uitgerekend" : " bij elkaar") : "") + '</div>' +
+      '<div class="hint" data-testid="display-hint">' + (som !== null
         ? "Totaal wordt " + next + (hits ? " <b>· winscore gehaald</b>" : (g.winScore ? " van " + g.winScore : ""))
         : losseOp
           ? "Tik nu het aantal punten dat er" + (sc.expr === "-" ? "af gaat" : "bij komt")
           : "Totaal nu " + total(e) + " · ronde " + (e.scores.length + 1) + " · tik +, &minus; of &times; om te rekenen") + '</div>' +
     '</div>' +
-    '<button class="btn-primary" data-act="sc-save"' + (som === null ? " disabled" : "") + '>' +
+    '<button class="btn-primary" data-act="sc-save" data-testid="punten-opslaan"' + (som === null ? " disabled" : "") + '>' +
       (heeftSom ? "Opslaan als " + som : "Opslaan") + '</button>' +
-    '<div class="keypad">' +
-      [7,8,9].map(k => '<button class="key" data-key="' + k + '">' + k + '</button>').join("") +
-      '<button class="key op" data-key="*" aria-label="Keer">&times;</button>' +
-      [4,5,6].map(k => '<button class="key" data-key="' + k + '">' + k + '</button>').join("") +
-      '<button class="key op" data-key="-" aria-label="Min">&minus;</button>' +
-      [1,2,3].map(k => '<button class="key" data-key="' + k + '">' + k + '</button>').join("") +
-      '<button class="key op" data-key="+" aria-label="Plus">+</button>' +
-      '<button class="key clr" data-key="clear" aria-label="Alles wissen">C</button>' +
-      '<button class="key" data-key="0">0</button>' +
-      '<button class="key plain" data-key="back" aria-label="Wis cijfer">' + ico("backspace", 26) + '</button>' +
-      '<button class="key eq" data-key="=" aria-label="Uitrekenen">=</button>' +
+    '<div class="keypad" data-testid="keypad">' +
+      [7,8,9].map(k => '<button class="key" data-key="' + k + '" data-testid="toets-' + k + '">' + k + '</button>').join("") +
+      '<button class="key op" data-key="*" data-testid="toets-keer" aria-label="Keer">&times;</button>' +
+      [4,5,6].map(k => '<button class="key" data-key="' + k + '" data-testid="toets-' + k + '">' + k + '</button>').join("") +
+      '<button class="key op" data-key="-" data-testid="toets-min" aria-label="Min">&minus;</button>' +
+      [1,2,3].map(k => '<button class="key" data-key="' + k + '" data-testid="toets-' + k + '">' + k + '</button>').join("") +
+      '<button class="key op" data-key="+" data-testid="toets-plus" aria-label="Plus">+</button>' +
+      '<button class="key clr" data-key="clear" data-testid="toets-wis" aria-label="Alles wissen">C</button>' +
+      '<button class="key" data-key="0" data-testid="toets-0">0</button>' +
+      '<button class="key plain" data-key="back" data-testid="toets-backspace" aria-label="Wis cijfer">' + ico("backspace", 26) + '</button>' +
+      '<button class="key eq" data-key="=" data-testid="toets-is" aria-label="Uitrekenen">=</button>' +
     '</div>';
 }
 function saveScore(){
@@ -945,25 +945,25 @@ function winSheet(g){
   const names = g.won.pids.map(id => esc(findPlayer(id).name));
   actionSheet(
     '<div class="trophy">🏆</div>' +
-    '<h2 class="win-title">' + (names.length > 1 ? "Gelijkspel: " + names.join(" & ") : names[0] + " wint") + '</h2>' +
+    '<h2 class="win-title" data-testid="win-titel">' + (names.length > 1 ? "Gelijkspel: " + names.join(" & ") : names[0] + " wint") + '</h2>' +
     '<p class="win-sub">' + g.won.score + ' punten · winscore ' + g.winScore + ' gehaald in ' + esc(g.name) + '</p>' +
-    standings(g).map((s,i) => '<div class="stand"><span class="pos">' + (i+1) + '</span><span class="nm">' + esc(s.name) + '</span><span class="sc">' + s.score + '</span></div>').join("") +
-    '<button class="btn-primary" style="margin:16px 0 8px" data-act="finish-confirm" data-gid="' + g.id + '">Bewaar in historie</button>' +
-    '<button class="action" data-act="revanche" data-gid="' + g.id + '">Nog een potje</button>' +
-    '<button class="action" data-act="keep-playing" data-gid="' + g.id + '">Toch doorspelen, winscore uit</button>', true);
+    standings(g).map((s,i) => '<div class="stand" data-testid="stand-regel"><span class="pos">' + (i+1) + '</span><span class="nm">' + esc(s.name) + '</span><span class="sc">' + s.score + '</span></div>').join("") +
+    '<button class="btn-primary" style="margin:16px 0 8px" data-act="finish-confirm" data-gid="' + g.id + '" data-testid="bewaar-historie">Bewaar in historie</button>' +
+    '<button class="action" data-act="revanche" data-gid="' + g.id + '" data-testid="nog-een-potje">Nog een potje</button>' +
+    '<button class="action" data-act="keep-playing" data-gid="' + g.id + '" data-testid="doorspelen">Toch doorspelen, winscore uit</button>', true);
 }
 function sortMenu(g){
   actionSheet('<p class="section-label" style="margin-top:0">Sorteer op</p>' +
-    Object.keys(SORTS).map(k => '<button class="action" data-act="set-sort" data-sort="' + k + '">' + SORTS[k] + (g.sort === k ? " ✓" : "") + '</button>').join(""));
+    Object.keys(SORTS).map(k => '<button class="action" data-act="set-sort" data-sort="' + k + '" data-testid="sorteer-' + k + '">' + SORTS[k] + (g.sort === k ? " ✓" : "") + '</button>').join(""));
 }
 function gameMenu(g){
   actionSheet(
     '<p class="section-label" style="margin-top:0">' + esc(g.name) + ' · ' + esc(goalText(g)) + '</p>' +
-    '<button class="action" data-act="rename">Naam wijzigen</button>' +
-    '<button class="action" data-act="edit-goal">Winscore aanpassen</button>' +
-    '<button class="action" data-act="toggle-levels">Levels ' + (g.levels ? "uitzetten" : "aanzetten") + '</button>' +
-    '<button class="action" data-act="reset">Alle scores op 0 zetten</button>' +
-    '<button class="action danger" data-act="scrap">Spel weggooien</button>');
+    '<button class="action" data-act="rename" data-testid="menu-hernoemen">Naam wijzigen</button>' +
+    '<button class="action" data-act="edit-goal" data-testid="menu-winscore">Winscore aanpassen</button>' +
+    '<button class="action" data-act="toggle-levels" data-testid="menu-levels">Levels ' + (g.levels ? "uitzetten" : "aanzetten") + '</button>' +
+    '<button class="action" data-act="reset" data-testid="menu-reset">Alle scores op 0 zetten</button>' +
+    '<button class="action danger" data-act="scrap" data-testid="menu-weggooien">Spel weggooien</button>');
 }
 function renameSheet(g){
   actionSheet('<p class="section-label" style="margin-top:0">Naam van het spel</p>' +
@@ -994,8 +994,8 @@ function addToGameSheet(g){
 function finishSheet(g){
   actionSheet('<p class="section-label" style="margin-top:0">Eindstand ' + esc(g.name) + '</p>' +
     standings(g).map((s,i) => '<div class="stand"><span class="pos">' + (i+1) + '</span><span class="nm">' + esc(s.name) + (i === 0 ? " 🏆" : "") + '</span><span class="sc">' + s.score + '</span></div>').join("") +
-    '<button class="btn-primary" style="margin:14px 0 8px" data-act="finish-confirm" data-gid="' + g.id + '">Bewaar en sluit spel</button>' +
-    '<button class="action" data-act="revanche" data-gid="' + g.id + '">Nog een potje</button>');
+    '<button class="btn-primary" style="margin:14px 0 8px" data-act="finish-confirm" data-gid="' + g.id + '" data-testid="bewaar-sluit">Bewaar en sluit spel</button>' +
+    '<button class="action" data-act="revanche" data-gid="' + g.id + '" data-testid="nog-een-potje">Nog een potje</button>');
 }
 
 
@@ -1041,7 +1041,7 @@ function renderTools(){
   const el = document.getElementById("view-tools");
   const sub = state.tools.sub;
   el.innerHTML =
-    '<div class="topbar"><button class="tools-title" data-act="tool-menu">' + ico(TOOLICON[sub], 20) + '<span>' + TOOLS[sub] + '</span>' + ico("chevronDown", 18) + '</button></div>' +
+    '<div class="topbar"><button class="tools-title" data-act="tool-menu" data-testid="tool-menu">' + ico(TOOLICON[sub], 20) + '<span>' + TOOLS[sub] + '</span>' + ico("chevronDown", 18) + '</button></div>' +
     '<div class="tool-card' + (sub === "pick" ? " tool-card-fill" : "") + '" id="tool-stage">' + (sub === "timer" ? timerHTML() : sub === "dice" ? diceHTML() : pick2HTML()) + '</div>' +
     (sub === "pick" ? "" : '<p class="tool-hint">' + (sub === "timer"
       ? "Tik op de tijd om een eigen duur in te stellen. Hij loopt door als je naar een ander tabblad gaat."
@@ -1050,7 +1050,7 @@ function renderTools(){
 }
 function toolMenu(){
   actionSheet('<p class="section-label" style="margin-top:0">Tools</p>' +
-    Object.keys(TOOLS).map(k => '<button class="action" style="display:flex; align-items:center; justify-content:center; gap:8px" data-act="tool-sub" data-sub="' + k + '">' + ico(TOOLICON[k], 19) + '<span>' + TOOLS[k] + (state.tools.sub === k ? " ✓" : "") + '</span></button>').join(""));
+    Object.keys(TOOLS).map(k => '<button class="action" style="display:flex; align-items:center; justify-content:center; gap:8px" data-act="tool-sub" data-sub="' + k + '" data-testid="tool-' + k + '">' + ico(TOOLICON[k], 19) + '<span>' + TOOLS[k] + (state.tools.sub === k ? " ✓" : "") + '</span></button>').join(""));
 }
 
 /* ---- timer ---- */
@@ -1059,19 +1059,19 @@ function timerHTML(){
   const frac = totaal ? Math.max(0, Math.min(1, timer.left / totaal)) : 0;
   const C = 2 * Math.PI * 98;
   return '<div class="chiprow">' +
-      [30,60,120,300].map(sec => '<button class="chipbtn ' + (totaal === sec ? "is-on" : "") + '" data-act="t-preset" data-secs="' + sec + '">' + (sec < 60 ? sec + "s" : (sec/60) + "m") + '</button>').join("") +
+      [30,60,120,300].map(sec => '<button class="chipbtn ' + (totaal === sec ? "is-on" : "") + '" data-act="t-preset" data-secs="' + sec + '" data-testid="timer-preset-' + sec + '">' + (sec < 60 ? sec + "s" : (sec/60) + "m") + '</button>').join("") +
     '</div>' +
-    '<button class="ring' + (timer.done ? " done" : "") + '" id="t-ring-wrap" data-act="t-edit" aria-label="Duur aanpassen">' +
+    '<button class="ring' + (timer.done ? " done" : "") + '" id="t-ring-wrap" data-act="t-edit" data-testid="timer-ring" aria-label="Duur aanpassen">' +
       '<svg width="220" height="220" viewBox="0 0 220 220">' +
         '<circle cx="110" cy="110" r="98" fill="none" stroke="var(--surface2)" stroke-width="13"/>' +
         '<circle id="t-ring" cx="110" cy="110" r="98" fill="none" stroke="' + (timer.done ? "#3E8E5A" : "#22503A") + '" stroke-width="13" stroke-linecap="round" stroke-dasharray="' + C.toFixed(1) + '" stroke-dashoffset="' + (C * (1 - frac)).toFixed(1) + '"/>' +
       '</svg>' +
-      '<span class="mid"><span class="t" id="t-time">' + mmss(timer.left) + '</span>' +
-      '<span class="s" id="t-sub">' + (timer.done ? "tijd om" : timer.running ? "loopt" : "tik om te wijzigen") + '</span></span>' +
+      '<span class="mid"><span class="t" id="t-time" data-testid="timer-tijd">' + mmss(timer.left) + '</span>' +
+      '<span class="s" id="t-sub" data-testid="timer-status">' + (timer.done ? "tijd om" : timer.running ? "loopt" : "tik om te wijzigen") + '</span></span>' +
     '</button>' +
     '<div class="btnrow">' +
-      '<button class="btn-primary" data-act="t-start">' + ico(timer.running ? "pause" : "play", 20) + '<span>' + (timer.running ? "Pauze" : timer.left <= 0 ? "Opnieuw" : "Start") + '</span></button>' +
-      '<button class="btn-sec" data-act="t-reset" aria-label="Reset">' + ico("reset", 20) + '</button>' +
+      '<button class="btn-primary" data-act="t-start" data-testid="timer-start">' + ico(timer.running ? "pause" : "play", 20) + '<span>' + (timer.running ? "Pauze" : timer.left <= 0 ? "Opnieuw" : "Start") + '</span></button>' +
+      '<button class="btn-sec" data-act="t-reset" data-testid="timer-reset" aria-label="Reset">' + ico("reset", 20) + '</button>' +
     '</div>';
 }
 function timerPaint(){
@@ -1122,23 +1122,23 @@ function dieHTML(v, rolling){
   const on = PIPS[v] || [];
   let cells = "";
   for(let i = 0; i < 9; i++) cells += '<i class="' + (on.indexOf(i) > -1 ? "on" : "") + '"></i>';
-  return '<span class="die' + (rolling ? " rolling" : "") + '">' + cells + '</span>';
+  return '<span class="die' + (rolling ? " rolling" : "") + '" data-testid="dobbelsteen" data-ogen="' + v + '">' + cells + '</span>';
 }
 function diceHTML(){
   const n = state.tools.dice;
   const som = dice.vals.reduce((a,b) => a + b, 0);
   return '<div class="chiprow">' +
-      [1,2,3,4,5,6].map(i => '<button class="circlebtn ' + (n === i ? "is-on" : "") + '" data-act="d-count" data-n="' + i + '"' + (dice.rolling ? " disabled" : "") + '>' + i + '</button>').join("") +
+      [1,2,3,4,5,6].map(i => '<button class="circlebtn ' + (n === i ? "is-on" : "") + '" data-act="d-count" data-n="' + i + '" data-testid="dobbel-aantal-' + i + '"' + (dice.rolling ? " disabled" : "") + '>' + i + '</button>').join("") +
     '</div>' +
-    '<div class="dicebox">' + (dice.vals.length
+    '<div class="dicebox" data-testid="dobbelbak">' + (dice.vals.length
       ? dice.vals.map(v => dieHTML(v, dice.rolling)).join("")
       : '<span style="color:var(--ink-soft); font-weight:600">Nog niet gegooid</span>') + '</div>' +
     (dice.vals.length && !dice.rolling
-      ? '<div class="bigtotal">' + som + '</div><div style="color:var(--ink-soft); font-size:14px; font-weight:600">' +
+      ? '<div class="bigtotal" data-testid="dobbel-totaal">' + som + '</div><div style="color:var(--ink-soft); font-size:14px; font-weight:600">' +
         (dice.vals.length > 1 ? "totaal van " + dice.vals.join(" + ") : "geworpen") +
         (dice.last.length ? ' · eerder: ' + dice.last.join(", ") : "") + '</div>'
       : '<div class="bigtotal">&nbsp;</div>') +
-    '<button class="btn-primary" style="margin-top:14px" data-act="d-roll"' + (dice.rolling ? " disabled" : "") + '>' + ico("dices", 20) + '<span>' + (dice.rolling ? "Rollen…" : "Gooien!") + '</span></button>';
+    '<button class="btn-primary" style="margin-top:14px" data-act="d-roll" data-testid="dobbel-gooi"' + (dice.rolling ? " disabled" : "") + '>' + ico("dices", 20) + '<span>' + (dice.rolling ? "Rollen…" : "Gooien!") + '</span></button>';
 }
 function roll(){
   const n = state.tools.dice;
@@ -1163,15 +1163,16 @@ function roll(){
 
 /* ---- kiezer (vingers op het scherm) ---- */
 function pick2HTML(){
-  return '<div class="p2-stage" id="p2-stage"><div class="p2-empty" id="p2-empty">Zet hier vingers neer</div></div>';
+  return '<div class="p2-stage" id="p2-stage" data-testid="kiezer-vlak"><div class="p2-empty" id="p2-empty" data-testid="kiezer-leeg">Zet hier vingers neer</div></div>';
 }
 function pick2Clamp(v, max){ return Math.max(37, Math.min(max - 37, v)); }
 function pick2FingerEl(id){
   const el = document.createElement("div");
   el.className = "p2-finger";
+  el.dataset.testid = "kiezer-vinger";
   el.id = "p2-f-" + id;
   el.style.setProperty("--fc", pick2.touches[id].color);
-  el.innerHTML = '<div class="p2-ring"></div><div class="p2-circle">' + pick2.touches[id].order + '</div>';
+  el.innerHTML = '<div class="p2-ring"></div><div class="p2-circle" data-testid="kiezer-nummer">' + pick2.touches[id].order + '</div>';
   return el;
 }
 function pick2Position(el, x, y){

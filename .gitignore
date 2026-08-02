@@ -3,3 +3,13 @@
 *.log
 node_modules/
 .swa/
+
+# plannen zijn werkdocumenten, niet voor de repo
+docs/plans/
+
+# testartefacten
+tests/node_modules/
+tests/.features-gen/
+tests/test-results/
+tests/playwright-report/
+tests/blob-report/

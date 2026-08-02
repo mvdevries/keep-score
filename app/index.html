@@ -826,6 +826,7 @@ function renderScore(){
 
   const som = calc(sc.expr);
   const heeftSom = /[+\-*]/.test(sc.expr.slice(1));
+  const losseMin = sc.expr === "-";
   const next = som === null ? null : total(e) + som;
   const hits = g.winScore && next !== null && next >= g.winScore;
   body.innerHTML =
@@ -840,11 +841,14 @@ function renderScore(){
     '</div>' +
     '<div class="display">' +
       '<div class="sum">' + (heeftSom ? esc(exprPretty(sc.expr)) : "&nbsp;") + '</div>' +
-      '<div class="val ' + (som === null ? "placeholder" : "") + '">' + (som === null ? "&mdash;" : som) + '</div>' +
+      '<div class="val ' + (som === null && !losseMin ? "placeholder" : "") + '">' +
+        (som !== null ? som : losseMin ? "&minus;" : "&mdash;") + '</div>' +
       '<div class="lbl">Punten' + (heeftSom ? (sc.expr.indexOf("*") > -1 ? " uitgerekend" : " bij elkaar") : "") + '</div>' +
       '<div class="hint">' + (som !== null
         ? "Totaal wordt " + next + (hits ? " <b>· winscore gehaald</b>" : (g.winScore ? " van " + g.winScore : ""))
-        : "Totaal nu " + total(e) + " · ronde " + (e.scores.length + 1) + " · tik +, &minus; of &times; om te rekenen") + '</div>' +
+        : losseMin
+          ? "Tik nu het aantal punten dat eraf gaat"
+          : "Totaal nu " + total(e) + " · ronde " + (e.scores.length + 1) + " · tik +, &minus; of &times; om te rekenen") + '</div>' +
     '</div>' +
     '<button class="btn-primary" data-act="sc-save"' + (som === null ? " disabled" : "") + '>' +
       (heeftSom ? "Opslaan als " + som : "Opslaan") + '</button>' +

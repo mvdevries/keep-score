@@ -947,8 +947,8 @@ function winSheet(g){
     '<p class="win-sub">' + g.won.score + ' punten · winscore ' + g.winScore + ' gehaald in ' + esc(g.name) + '</p>' +
     standings(g).map((s,i) => '<div class="stand"><span class="pos">' + (i+1) + '</span><span class="nm">' + esc(s.name) + '</span><span class="sc">' + s.score + '</span></div>').join("") +
     '<button class="btn-primary" style="margin:16px 0 8px" data-act="finish-confirm" data-gid="' + g.id + '">Bewaar in historie</button>' +
-    '<button class="action" data-act="keep-playing" data-gid="' + g.id + '">Toch doorspelen, winscore uit</button>' +
-    '<button class="action" data-close>Later beslissen</button>', true);
+    '<button class="action" data-act="revanche" data-gid="' + g.id + '">Revanche, zelfde spelers</button>' +
+    '<button class="action" data-act="keep-playing" data-gid="' + g.id + '">Toch doorspelen, winscore uit</button>', true);
 }
 function sortMenu(g){
   actionSheet('<p class="section-label" style="margin-top:0">Sorteer op</p>' +
@@ -992,7 +992,8 @@ function addToGameSheet(g){
 function finishSheet(g){
   actionSheet('<p class="section-label" style="margin-top:0">Eindstand ' + esc(g.name) + '</p>' +
     standings(g).map((s,i) => '<div class="stand"><span class="pos">' + (i+1) + '</span><span class="nm">' + esc(s.name) + (i === 0 ? " 🏆" : "") + '</span><span class="sc">' + s.score + '</span></div>').join("") +
-    '<button class="btn-primary" style="margin:14px 0 8px" data-act="finish-confirm" data-gid="' + g.id + '">Bewaar en sluit spel</button>');
+    '<button class="btn-primary" style="margin:14px 0 8px" data-act="finish-confirm" data-gid="' + g.id + '">Bewaar en sluit spel</button>' +
+    '<button class="action" data-act="revanche" data-gid="' + g.id + '">Revanche, zelfde spelers</button>');
 }
 
 
@@ -1333,6 +1334,19 @@ document.addEventListener("click", ev => {
       state.history.unshift({ name:g.name, date:g.date, winScore:g.winScore, standings:standings(g).map(s => ({ name:s.name, score:s.score })) });
       state.games = state.games.filter(x => x.id !== g.id);
       state.openGameId = null; closeAllSheets(); state.tab = "games"; state.gamesMode = "history"; render(); toast("Eindstand in historie"); break;
+    }
+    case "revanche": {
+      state.history.unshift({ name:g.name, date:g.date, winScore:g.winScore, standings:standings(g).map(s => ({ name:s.name, score:s.score })) });
+      const nieuw = {
+        id:uid(), name:g.name, templateId:g.templateId,
+        winScore:g.winScore, winMode:g.winMode, levels:g.levels, sort:g.sort,
+        date:today(), updated:Date.now(), won:null,
+        entrants:g.entrants.map(e => ({ pid:e.pid, level:1, scores:[] }))
+      };
+      state.games = state.games.filter(x => x.id !== g.id).concat([nieuw]);
+      state.openGameId = nieuw.id;
+      closeAllSheets(); state.tab = "games"; state.gamesMode = "current"; render(); window.scrollTo(0,0);
+      toast("Revanche, iedereen weer op 0"); break;
     }
 
     /* score sheet */
